@@ -520,8 +520,19 @@ public class EmployeeService {
 
 // Employee Of Month
 
+        LocalDateTime start =
+                LocalDate.now()
+                        .withDayOfMonth(1)
+                        .atStartOfDay();
+
+        LocalDateTime end =
+                start.plusMonths(1);
+
         List<Employee> ranking =
-                employeeRepository.getEmployeeRanking();
+                employeeRepository.getEmployeeRanking(
+                        start,
+                        end
+                );
 
         Employee topEmployee = null;
 
@@ -701,16 +712,6 @@ public class EmployeeService {
 
         );
 
-        LocalDate today =
-                LocalDate.now();
-
-        LocalDateTime start =
-                today
-                        .withDayOfMonth(1)
-                        .atStartOfDay();
-
-        LocalDateTime end =
-                start.plusMonths(1);
 
         dto.setThisMonthRequests(
 
@@ -889,9 +890,19 @@ public class EmployeeService {
         EmployeeDashboardDTO dto =
                 new EmployeeDashboardDTO();
 
-        List<Employee> ranking =
-                employeeRepository.getEmployeeRanking();
+        LocalDateTime start =
+                LocalDate.now()
+                        .withDayOfMonth(1)
+                        .atStartOfDay();
 
+        LocalDateTime end =
+                start.plusMonths(1);
+
+        List<Employee> ranking =
+                employeeRepository.getEmployeeRanking(
+                        start,
+                        end
+                );
         if (!ranking.isEmpty()) {
 
             Employee employee =
