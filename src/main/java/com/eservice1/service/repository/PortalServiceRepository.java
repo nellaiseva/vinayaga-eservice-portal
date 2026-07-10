@@ -14,19 +14,11 @@ public interface PortalServiceRepository extends JpaRepository<PortalService, Lo
 SELECT s
 FROM PortalService s
 WHERE
-(
-    :search IS NULL
-
-    OR
-
-    LOWER(s.serviceName)
-    LIKE LOWER(CONCAT('%',:search,'%'))
-
-    OR
-
-    LOWER(s.description)
-    LIKE LOWER(CONCAT('%',:search,'%'))
-)
+LOWER(s.serviceName)
+    LIKE LOWER(CONCAT('%', :search, '%'))
+OR
+LOWER(s.description)
+    LIKE LOWER(CONCAT('%', :search, '%'))
 """)
     Page<PortalService> searchServices(
 
@@ -41,15 +33,16 @@ SELECT s
 FROM PortalService s
 WHERE s.active = true
 AND (
-    :search IS NULL
-    OR LOWER(s.serviceName)
-       LIKE LOWER(CONCAT('%', :search, '%'))
-    OR LOWER(s.description)
-       LIKE LOWER(CONCAT('%', :search, '%'))
+    LOWER(s.serviceName)
+        LIKE LOWER(CONCAT('%', :search, '%'))
+    OR
+    LOWER(s.description)
+        LIKE LOWER(CONCAT('%', :search, '%'))
 )
 """)
     Page<PortalService> searchActiveServices(
             @Param("search") String search,
             Pageable pageable
     );
+    Page<PortalService> findByActiveTrue(Pageable pageable);
 }

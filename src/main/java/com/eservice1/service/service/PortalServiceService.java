@@ -95,18 +95,6 @@ public class PortalServiceService {
 
     ) {
 
-        if (search != null) {
-
-            search = search.trim();
-
-            if (search.isBlank()) {
-
-                search = null;
-
-            }
-
-        }
-
         Pageable pageable =
 
                 PageRequest.of(
@@ -119,18 +107,26 @@ public class PortalServiceService {
 
                 );
 
-        Page<PortalService> services =
+        if (search == null || search.trim().isBlank()) {
+
+            return PaginationMapper.toResponse(
+
+                    repository.findAll(pageable)
+
+            );
+
+        }
+
+        return PaginationMapper.toResponse(
 
                 repository.searchServices(
 
-                        search,
+                        search.trim(),
 
                         pageable
 
-                );
+                )
 
-        return PaginationMapper.toResponse(
-                services
         );
 
     }
@@ -192,18 +188,6 @@ public class PortalServiceService {
 
     ) {
 
-        if (search != null) {
-
-            search = search.trim();
-
-            if (search.isBlank()) {
-
-                search = null;
-
-            }
-
-        }
-
         Pageable pageable =
 
                 PageRequest.of(
@@ -216,20 +200,27 @@ public class PortalServiceService {
 
                 );
 
-        Page<PortalService> services =
+        if (search == null || search.trim().isBlank()) {
+
+            return PaginationMapper.toResponse(
+
+                    repository.findByActiveTrue(pageable)
+
+            );
+
+        }
+
+        return PaginationMapper.toResponse(
 
                 repository.searchActiveServices(
 
-                        search,
+                        search.trim(),
 
                         pageable
 
-                );
+                )
 
-        return PaginationMapper.toResponse(
-                services
         );
 
     }
-
 }
