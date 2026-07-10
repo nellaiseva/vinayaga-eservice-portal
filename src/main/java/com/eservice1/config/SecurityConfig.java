@@ -47,11 +47,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
-                        .requestMatchers(
-                                "/auth/login",
-                                "/auth/register",
-                                "/auth/owner"
-                        ).permitAll()
 
                         .requestMatchers(
                                 "/auth/login",
