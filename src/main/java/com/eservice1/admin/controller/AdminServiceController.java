@@ -33,19 +33,19 @@ public class AdminServiceController {
     @GetMapping
     public PageResponseDTO<PortalService> getAllServices(
 
-            @RequestParam(defaultValue = "0")
-            int page,
+            @RequestParam(defaultValue = "0") int page,
 
-            @RequestParam(defaultValue = "10")
-            int size
+            @RequestParam(defaultValue = "10") int size,
+
+            @RequestParam(required = false) String search
 
     ) {
 
         return service.getAll(
                 page,
-                size
+                size,
+                search
         );
-
     }
     @DeleteMapping("/{id}")
     public void deleteService(@PathVariable Long id) {
