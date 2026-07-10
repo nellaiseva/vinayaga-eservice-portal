@@ -565,9 +565,10 @@ public class EmployeeService {
 
             Double topRevenue =
                     taskRepository.getCurrentMonthRevenue(
-                            topEmployee.getId()
+                            topEmployee.getId(),
+                            start,
+                            end
                     );
-
             if (topRevenue == null) {
 
                 topRevenue = 0.0;
@@ -580,7 +581,9 @@ public class EmployeeService {
 
             Long completed =
                     taskRepository.getCurrentMonthCompleted(
-                            topEmployee.getId()
+                            topEmployee.getId(),
+                            start,
+                            end
                     );
 
             if (completed == null) {
@@ -930,9 +933,10 @@ public class EmployeeService {
             Double revenue =
                     taskRepository
                             .getCurrentMonthRevenue(
-                                    employee.getId()
+                                    employee.getId(),
+                                    start,
+                                    end
                             );
-
             if (revenue == null) {
 
                 revenue = 0.0;
@@ -946,9 +950,10 @@ public class EmployeeService {
             Long completed =
                     taskRepository
                             .getCurrentMonthCompleted(
-                                    employee.getId()
+                                    employee.getId(),
+                                    start,
+                                    end
                             );
-
             if (completed == null) {
 
                 completed = 0L;

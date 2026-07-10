@@ -226,15 +226,21 @@ WHERE t.employee.id=:employeeId
 AND t.request.paymentStatus=
 com.eservice1.submission.entity.PaymentStatus.PAID
 
-AND YEAR(t.request.createdAt)=YEAR(CURRENT_DATE)
+AND t.request.createdAt >= :start
 
-AND MONTH(t.request.createdAt)=MONTH(CURRENT_DATE)
+AND t.request.createdAt < :end
 
 """)
     Double getCurrentMonthRevenue(
 
             @Param("employeeId")
-            Long employeeId
+            Long employeeId,
+
+            @Param("start")
+            LocalDateTime start,
+
+            @Param("end")
+            LocalDateTime end
 
     );
     @Query("""
@@ -247,15 +253,21 @@ WHERE t.employee.id=:employeeId
 AND t.status=
 com.eservice1.employee.entity.TaskStatus.COMPLETED
 
-AND YEAR(t.request.createdAt)=YEAR(CURRENT_DATE)
+AND t.request.createdAt >= :start
 
-AND MONTH(t.request.createdAt)=MONTH(CURRENT_DATE)
+AND t.request.createdAt < :end
 
 """)
     Long getCurrentMonthCompleted(
 
             @Param("employeeId")
-            Long employeeId
+            Long employeeId,
+
+            @Param("start")
+            LocalDateTime start,
+
+            @Param("end")
+            LocalDateTime end
 
     );
     @Query("""
