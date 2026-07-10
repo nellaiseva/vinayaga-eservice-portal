@@ -172,6 +172,7 @@ public class GlobalExceptionHandler {
             Exception ex
 
     ) {
+        ex.printStackTrace();   // <-- add this
 
         ErrorResponse error = new ErrorResponse(
 
