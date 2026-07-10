@@ -44,8 +44,14 @@ public class AuthController {
     }
 
     @PostMapping("/owner")
-    public User createOwner() {
+    public User createOwner(
 
-        return userService.createOwner();
+            @Valid
+            @RequestBody RegisterRequest request
+
+    ) {
+
+        return userService.createOwner(request);
+
     }
 }

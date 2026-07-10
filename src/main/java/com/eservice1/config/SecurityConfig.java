@@ -49,6 +49,12 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/auth/login",
+                                "/auth/register",
+                                "/auth/owner"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/auth/login",
                                 "/auth/owner"
                         ).permitAll()
 

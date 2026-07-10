@@ -1,5 +1,6 @@
 package com.eservice1.user.repository;
 
+import com.eservice1.common.Role;
 import com.eservice1.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,5 +10,5 @@ public interface UserRepository
         extends JpaRepository<User, Long> {
 
     Optional<User> findByPhoneNumber(String phoneNumber);
-
+    boolean existsByRole(Role role);
 }

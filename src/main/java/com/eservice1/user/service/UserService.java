@@ -127,17 +127,20 @@ public class UserService {
                 employeeId
         );
     }
-    public User createOwner() {
+    public User createOwner(RegisterRequest request) {
+
+        if (userRepository.existsByRole(Role.OWNER)) {
+            throw new RuntimeException("Owner already exists");
+        }
 
         User owner = new User();
 
-        owner.setName("Owner");
-        owner.setPhoneNumber("9999999999");
+        owner.setName(request.getName());
+        owner.setPhoneNumber(request.getPhoneNumber());
         owner.setPassword(
-                passwordEncoder.encode(
-                        "owner123"
-                )
-        );        owner.setRole(Role.OWNER);
+                passwordEncoder.encode(request.getPassword())
+        );
+        owner.setRole(Role.OWNER);
 
         return userRepository.save(owner);
     }
