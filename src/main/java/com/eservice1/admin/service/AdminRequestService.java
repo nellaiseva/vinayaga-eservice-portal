@@ -15,7 +15,8 @@ import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
-
+import com.eservice1.submission.specification.CustomerRequestSpecification;
+import org.springframework.data.jpa.domain.Specification;
 @Service
 public class AdminRequestService {
 
@@ -83,20 +84,18 @@ public class AdminRequestService {
 
                 );
 
-        Page<CustomerRequest> requests =
-
-                requestRepository.searchRequests(
-
+        Specification<CustomerRequest> specification =
+                CustomerRequestSpecification.filter(
                         search,
-
                         phone,
-
                         status,
+                        date
+                );
 
-                        date,
-
+        Page<CustomerRequest> requests =
+                requestRepository.findAll(
+                        specification,
                         pageable
-
                 );
 
         List<Long> requestIds =

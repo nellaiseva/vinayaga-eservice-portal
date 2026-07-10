@@ -55,30 +55,6 @@ GROUP BY c.service.serviceName
     getServiceRequestCounts();
 
 
-    @Query("""
-SELECT r
-FROM CustomerRequest r
-WHERE
-(:search IS NULL OR LOWER(r.customerName) LIKE LOWER(CONCAT('%', :search, '%')))
-AND
-(:phone IS NULL OR r.phoneNumber LIKE CONCAT('%', :phone, '%'))
-AND
-(:status IS NULL OR CAST(r.status AS string) = :status)
-AND
-(:date IS NULL OR FUNCTION('DATE', r.createdAt) = :date)
-""")
-    Page<CustomerRequest> searchRequests(
 
-            @Param("search") String search,
-
-            @Param("phone") String phone,
-
-            @Param("status") String status,
-
-            @Param("date") LocalDate date,
-
-            Pageable pageable
-
-    );
 
 }
