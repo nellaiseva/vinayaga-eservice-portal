@@ -10,7 +10,7 @@ public class CreateServiceRequest {
     @Size(max = 100, message = "Service name cannot exceed 100 characters.")
     private String serviceName;
 
-    @NotBlank(message = "Description is required.")
+   // @NotBlank(message = "Description is required.")
     @Size(max = 500, message = "Description cannot exceed 500 characters.")
     private String description;
 
