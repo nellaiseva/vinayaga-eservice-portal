@@ -159,8 +159,7 @@ AND t.request.createdAt<:end
     @Query("""
 SELECT
 
-FUNCTION('MONTHNAME', t.request.createdAt),
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon'),
 COALESCE(SUM(t.request.amount),0.0)
 
 FROM Task t
@@ -173,8 +172,7 @@ com.eservice1.submission.entity.PaymentStatus.PAID
 GROUP BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt),
-FUNCTION('MONTHNAME', t.request.createdAt)
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon')
 ORDER BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt)
@@ -189,8 +187,7 @@ MONTH(t.request.createdAt)
     @Query("""
 SELECT
 
-FUNCTION('MONTHNAME', t.request.createdAt),
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon'),
 COUNT(t)
 
 FROM Task t
@@ -203,8 +200,7 @@ com.eservice1.employee.entity.TaskStatus.COMPLETED
 GROUP BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt),
-FUNCTION('MONTHNAME', t.request.createdAt)
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon')
 ORDER BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt)
@@ -273,8 +269,7 @@ AND t.request.createdAt < :end
     @Query("""
 SELECT
 
-FUNCTION('MONTHNAME', t.request.createdAt),
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon'),
 COALESCE(SUM(t.request.amount),0.0)
 
 FROM Task t
@@ -285,8 +280,7 @@ com.eservice1.submission.entity.PaymentStatus.PAID
 GROUP BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt),
-FUNCTION('MONTHNAME', t.request.createdAt)
-
+FUNCTION('TO_CHAR', t.request.createdAt, 'Mon')
 ORDER BY
 YEAR(t.request.createdAt),
 MONTH(t.request.createdAt)
