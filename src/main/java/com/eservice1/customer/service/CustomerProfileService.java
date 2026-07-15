@@ -42,19 +42,21 @@ public class CustomerProfileService {
                 profile
         );
     }
-    public CustomerProfile getByPhone(
-            String phoneNumber) {
+    public CustomerProfile getByPhone(String phoneNumber) {
+
+        System.out.println("Requested phone: " + phoneNumber);
 
         CustomerProfile profile =
-                repository.findByPhoneNumber(
-                        phoneNumber
-                );
+                repository.findByPhoneNumber(phoneNumber);
+
+        System.out.println("Repository result: " + profile);
+
+        if (profile != null) {
+            System.out.println("Found profile phone: " + profile.getPhoneNumber());
+        }
 
         if (profile == null) {
-
-            throw new RuntimeException(
-                    "Profile Not Found"
-            );
+            throw new RuntimeException("Profile Not Found");
         }
 
         return profile;
