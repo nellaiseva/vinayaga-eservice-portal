@@ -19,7 +19,7 @@ public class ServiceCategory {
 
     private Boolean active = true;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "category_services",
             joinColumns = @JoinColumn(name = "category_id")
