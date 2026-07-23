@@ -110,28 +110,15 @@ public class TaskService {
 
     ) {
 
-        if (search != null) {
+        search = (search == null) ? "" : search.trim();
+        phone  = (phone == null) ? "" : phone.trim();
 
-            search = search.trim();
+        if (status != null) {
+            status = status.trim();
 
-            if (search.isBlank()) {
-
-                search = null;
-
+            if (status.isBlank() || status.equalsIgnoreCase("ALL")) {
+                status = null;
             }
-
-        }
-
-        if (phone != null) {
-
-            phone = phone.trim();
-
-            if (phone.isBlank()) {
-
-                phone = null;
-
-            }
-
         }
 
         if (status != null) {
@@ -145,7 +132,7 @@ public class TaskService {
             }
 
         }
-
+        try {
         Pageable pageable =
 
                 PageRequest.of(
@@ -183,6 +170,13 @@ public class TaskService {
                 );
 
         return PaginationMapper.toResponse(tasks);
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            throw e;
+
+        }
 
     }
     public List<Task> getTasks(Long employeeId) {

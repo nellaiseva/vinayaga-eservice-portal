@@ -1,64 +1,50 @@
 package com.eservice1.submission.controller;
 
+import com.eservice1.storage.StorageService;
 import com.eservice1.submission.entity.UploadedDocument;
 import com.eservice1.submission.repository.UploadedDocumentRepository;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import java.util.List;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/documents")
 public class UploadedDocumentController {
 
-    private final UploadedDocumentRepository
-            documentRepository;
+    private final UploadedDocumentRepository documentRepository;
+    private final StorageService storageService;
 
     public UploadedDocumentController(
-            UploadedDocumentRepository documentRepository) {
+            UploadedDocumentRepository documentRepository,
+            StorageService storageService) {
 
-        this.documentRepository =
-                documentRepository;
+        this.documentRepository = documentRepository;
+        this.storageService = storageService;
     }
 
-
     @GetMapping("/download/{documentId}")
-    public ResponseEntity<Resource>
-    downloadDocument(
-            @PathVariable Long documentId)
-            throws Exception {
+    public ResponseEntity<byte[]> downloadDocument(
+            @PathVariable Long documentId) throws IOException {
 
-        UploadedDocument document =
-                documentRepository
-                        .findById(documentId)
-                        .orElseThrow();
+        UploadedDocument document = documentRepository
+                .findById(documentId)
+                .orElseThrow();
 
-        Path path =
-                Paths.get(
-                        document.getFilePath()
-                );
-
-        Resource resource =
-                new UrlResource(
-                        path.toUri()
-                );
+        byte[] fileBytes =
+                storageService.download(document.getFilePath());
 
         return ResponseEntity.ok()
                 .header(
-                        HttpHeaders
-                                .CONTENT_DISPOSITION,
-                        "attachment; filename=\""
-                                + document.getFileName()
-                                + "\""
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" +
+                                document.getFileName() +
+                                "\""
                 )
-                .body(resource);
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(fileBytes.length)
+                .body(fileBytes);
     }
-
 }

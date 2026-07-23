@@ -1,5 +1,6 @@
 package com.eservice1.submission.service;
 
+import com.eservice1.storage.StorageService;
 import com.eservice1.submission.entity.CustomerRequest;
 import com.eservice1.submission.entity.RequestStatus;
 import com.eservice1.submission.entity.UploadedDocument;
@@ -8,30 +9,32 @@ import com.eservice1.submission.repository.UploadedDocumentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import com.eservice1.common.exception.InvalidOperationException;
 import com.eservice1.common.exception.ResourceNotFoundException;
 
 import java.util.Set;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 @Service
 public class RealFileUploadService {
 
     private final UploadedDocumentRepository documentRepository;
     private final CustomerRequestRepository requestRepository;
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    private final StorageService storageService;
+
 
     @Value("${file.max-size}")
     private long maxFileSize;
+
+
     public RealFileUploadService(
             UploadedDocumentRepository documentRepository,
-            CustomerRequestRepository requestRepository) {
+            CustomerRequestRepository requestRepository,
+            StorageService storageService) {
 
         this.documentRepository = documentRepository;
         this.requestRepository = requestRepository;
+        this.storageService = storageService;
     }
 
     public UploadedDocument uploadFile(
@@ -63,24 +66,22 @@ public class RealFileUploadService {
         }
         if (file.getSize() > maxFileSize) {
             throw new InvalidOperationException(
-                    "Maximum file size is 5 MB."
+                    "Maximum file size is 30 MB."
             );
 
         }
         Set<String> allowedTypes = Set.of(
-
                 "application/pdf",
-
                 "image/jpeg",
-
-                "image/png"
-
+                "image/png",
+                "image/jpg",
+                "image/heic",
+                "image/heif"
         );
-
         if (!allowedTypes.contains(file.getContentType())) {
 
             throw new InvalidOperationException(
-                    "Only PDF, JPG and PNG files are allowed."
+                    "Unsupported file type."
             );
 
         }
@@ -93,47 +94,16 @@ public class RealFileUploadService {
             );
 
         }
-        String uploadPath = System.getProperty("user.dir")
-                + File.separator
-                + uploadDir
-                + File.separator;
 
-        File directory = new File(uploadPath);
-        if (!directory.exists() && !directory.mkdirs()) {
-
-            throw new IOException(
-                    "Unable to create upload directory."
-            );
-
-        }
-
-        String originalName =
-                file.getOriginalFilename();
-
-        String extension = "";
-
-        if (originalName != null &&
-                originalName.contains(".")) {
-
-            extension = originalName.substring(
-                    originalName.lastIndexOf(".")
-            );
-
-        }
-
-        String fileName =
-                UUID.randomUUID() + extension;
-        String filePath = uploadPath + fileName;
         //System.out.println("Saving to: " + filePath);
 
-        file.transferTo(new File(filePath));
-
+        String objectPath = storageService.upload(file, requestId);
         UploadedDocument document =
                 new UploadedDocument();
 
         document.setDocumentName(documentName);
-        document.setFileName(fileName);
-        document.setFilePath(filePath);
+        document.setFileName(file.getOriginalFilename());
+        document.setFilePath(objectPath);
         document.setRequest(request);
         document.setResultDocument(isResult);
         return documentRepository.save(document);

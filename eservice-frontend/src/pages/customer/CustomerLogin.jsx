@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTransition from "../../components/PageTransition";
 import { motion } from "framer-motion";
-import "./CustomerLogin.css";
+import "./CustomerLogin.css";import axios from "axios";
 
 function CustomerLogin() {
 
@@ -17,37 +17,156 @@ function CustomerLogin() {
 
     const navigate =
         useNavigate();
+    const [loading, setLoading] = useState(false);
 
-    const sendOtp = () => {
+    const [timer, setTimer] = useState(0);
+    const API_URL =
+        import.meta.env.VITE_API_URL ||
+        "http://localhost:8080";
+    const sendOtp = async () => {
 
-        alert("Demo OTP: 123456");
+        if (phoneNumber.length !== 10) {
 
-        setOtpSent(true);
-    };
+            alert("Enter a valid mobile number");
 
-    const verifyOtp = () => {
-
-        if (otp !== "123456") {
-
-            alert("Invalid OTP");
             return;
         }
 
-        localStorage.setItem(
-            "customerPhone",
-            phoneNumber
-        );
+        try {
 
-        localStorage.setItem(
-            "phoneNumber",
-            phoneNumber
-        );
+            setLoading(true);
 
-        navigate(
-            "/customer-profile-check"
-        );
+            const response = await axios.post(
+
+                `${API_URL}/customer/send-otp`,
+
+                {
+                    phoneNumber
+                }
+
+            );
+
+            if (response.data.success) {
+
+                setOtpSent(true);
+
+                alert(response.data.message);
+
+                setTimer(60);
+
+                const interval = setInterval(() => {
+
+                    setTimer(prev => {
+
+                        if (prev <= 1) {
+
+                            clearInterval(interval);
+
+                            return 0;
+
+                        }
+
+                        return prev - 1;
+
+                    });
+
+                }, 1000);
+
+            } else {
+
+                alert(response.data.message);
+
+            }
+
+        } catch (error) {
+
+            alert(
+
+                error.response?.data?.message ||
+
+                "Failed to send OTP"
+
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
     };
 
+    const verifyOtp = async () => {
+
+        try {
+
+            setLoading(true);
+
+            const response = await axios.post(
+
+                `${API_URL}/customer/verify-otp`,
+
+                {
+
+                    phoneNumber,
+
+                    otp
+
+                }
+
+            );
+
+            if (!response.data.success) {
+
+                alert(response.data.message);
+
+                return;
+
+            }
+
+            localStorage.setItem(
+
+                "token",
+
+                response.data.token
+
+            );
+
+            localStorage.setItem(
+
+                "customerPhone",
+
+                phoneNumber
+
+            );
+
+            localStorage.setItem(
+
+                "phoneNumber",
+
+                phoneNumber
+
+            );
+
+            navigate("/customer-profile-check");
+
+        } catch (error) {
+
+            alert(
+
+                error.response?.data?.message ||
+
+                "Invalid OTP"
+
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
     return (
 
         <PageTransition>
@@ -85,15 +204,16 @@ function CustomerLogin() {
 
                     <input
                         className="phone-input"
+                        type="tel"
                         placeholder="Enter Mobile Number"
                         value={phoneNumber}
+                        maxLength={10}
                         onChange={(e) =>
                             setPhoneNumber(
-                                e.target.value
+                                e.target.value.replace(/\D/g, "")
                             )
                         }
                     />
-
                     {
                         otpSent && (
 
@@ -108,6 +228,7 @@ function CustomerLogin() {
                                 }
                             />
 
+
                         )
                     }
 
@@ -117,9 +238,14 @@ function CustomerLogin() {
                             <button
                                 className="continue-btn"
                                 onClick={sendOtp}
+                                disabled={loading}
                             >
-                                Send OTP →
-                            </button>
+                                {
+                                    loading
+                                        ? "Sending..."
+                                        : "Send OTP →"
+                                }                            </button>
+
 
                         ) : (
 
@@ -127,16 +253,31 @@ function CustomerLogin() {
                                 className="continue-btn"
                                 onClick={verifyOtp}
                             >
-                                Verify OTP →
-                            </button>
+                                {
+                                    loading
+                                        ? "Verifying..."
+                                        : "Verify OTP →"
+                                }                            </button>
 
                         )
                     }
+                    {
+                        otpSent && timer > 0 && (
 
+                            <p
+                                style={{
+                                    marginTop: "10px",
+                                    color: "#666"
+                                }}
+                            >
+                                Resend OTP in {timer}s
+                            </p>
+
+                        )
+                    }
                     <div className="login-footer">
                         🔒 Secure OTP Authentication
                     </div>
-
                 </motion.div>
 
             </div>

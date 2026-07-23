@@ -43,25 +43,11 @@ FROM Task t
 
 WHERE t.employee.id = :employeeId
 
-AND
-(
-    :search IS NULL
+AND LOWER(t.request.customerName)
+        LIKE LOWER(CONCAT('%', :search, '%'))
 
-    OR
-
-    LOWER(t.request.customerName)
-    LIKE LOWER(CONCAT('%',:search,'%'))
-)
-
-AND
-(
-    :phone IS NULL
-
-    OR
-
-    t.request.phoneNumber
-    LIKE CONCAT('%',:phone,'%')
-)
+AND t.request.phoneNumber
+        LIKE CONCAT('%', :phone, '%')
 
 AND
 (

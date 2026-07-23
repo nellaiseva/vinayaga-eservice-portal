@@ -1,7 +1,8 @@
 package com.eservice1.submission.entity;
 
 import jakarta.persistence.*;
-
+import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDateTime;
 @Entity
 @Table(name = "uploaded_documents")
 public class UploadedDocument {
@@ -17,6 +18,10 @@ public class UploadedDocument {
     private String filePath;
 
     private Boolean resultDocument = false;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime uploadedAt;
 
     @ManyToOne
     @JoinColumn(name = "request_id")
@@ -67,5 +72,9 @@ public class UploadedDocument {
 
     public void setResultDocument(Boolean resultDocument) {
         this.resultDocument = resultDocument;
+    }
+
+    public LocalDateTime getUploadedAt() {
+        return uploadedAt;
     }
 }

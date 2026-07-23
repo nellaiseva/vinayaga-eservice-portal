@@ -143,7 +143,7 @@ public class SecurityConfig {
                         .permitAll()
 
                         .requestMatchers("/documents/upload")
-                        .authenticated()
+                        .permitAll()
 
 
                         .requestMatchers("/feedback/**")
@@ -167,8 +167,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://vinayaga-eservice-portal-1.onrender.com"
-        ));
+                "https://nellaieseva.com","https://www.nellaieseva.com"        ));
 
         configuration.setAllowedMethods(
                 List.of(
