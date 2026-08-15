@@ -1,8 +1,7 @@
 package com.eservice1.customer.entity;
 
 import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "otp_verification")
@@ -19,10 +18,10 @@ public class OtpVerification {
     private String otp;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(nullable = false)
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(nullable = false)
     private boolean verified;
@@ -57,19 +56,19 @@ public class OtpVerification {
         this.otp = otp;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getExpiresAt() {
+    public Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDateTime expiresAt) {
+    public void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
     }
 

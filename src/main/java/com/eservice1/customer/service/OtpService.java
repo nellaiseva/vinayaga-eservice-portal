@@ -1,29 +1,34 @@
 package com.eservice1.customer.service;
 
+import com.eservice1.common.Role;
 import com.eservice1.config.JwtService;
 import com.eservice1.customer.dto.OtpResponse;
 import com.eservice1.customer.dto.SendOtpRequest;
 import com.eservice1.customer.dto.VerifyOtpRequest;
 import com.eservice1.customer.entity.OtpVerification;
 import com.eservice1.customer.repository.OtpVerificationRepository;
-import org.springframework.stereotype.Service;
-import com.eservice1.common.Role;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 import com.eservice1.user.entity.User;
 import com.eservice1.user.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
+
 @Service
 public class OtpService {
+
     private final OtpVerificationRepository repository;
     private final JwtService jwtService;
     private final Msg91Service msg91Service;
     private final UserRepository userRepository;
 
-    public OtpService(OtpVerificationRepository repository,
-                      JwtService jwtService,
-                      Msg91Service msg91Service,
-                      UserRepository userRepository) {
+    public OtpService(
+            OtpVerificationRepository repository,
+            JwtService jwtService,
+            Msg91Service msg91Service,
+            UserRepository userRepository) {
 
         this.repository = repository;
         this.jwtService = jwtService;
@@ -35,10 +40,14 @@ public class OtpService {
 
         String phoneNumber = request.getPhoneNumber();
 
-        long otpCount = repository.countByPhoneNumberAndCreatedAtAfter(
-                phoneNumber,
-                LocalDateTime.now().minusHours(1)
-        );
+        Instant now = Instant.now();
+
+        // Maximum 5 OTP requests per hour
+        long otpCount =
+                repository.countByPhoneNumberAndCreatedAtAfter(
+                        phoneNumber,
+                        now.minusSeconds(3600)
+                );
 
         if (otpCount >= 5) {
 
@@ -50,24 +59,29 @@ public class OtpService {
         }
 
         Optional<OtpVerification> existing =
-                repository.findTopByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
+                repository.findTopByPhoneNumberOrderByCreatedAtDesc(
+                        phoneNumber
+                );
 
         if (existing.isPresent()) {
 
             OtpVerification oldOtp = existing.get();
 
-            if (LocalDateTime.now().isBefore(
-                    oldOtp.getCreatedAt().plusSeconds(60))) {
+            Instant resendAvailableAt =
+                    oldOtp.getCreatedAt().plusSeconds(60);
+
+            if (now.isBefore(resendAvailableAt)) {
 
                 long seconds =
-                        java.time.Duration.between(
-                                LocalDateTime.now(),
-                                oldOtp.getCreatedAt().plusSeconds(60)
+                        Duration.between(
+                                now,
+                                resendAvailableAt
                         ).getSeconds();
 
                 return new OtpResponse(
                         false,
-                        "Please wait " + seconds + " seconds before requesting another OTP.",
+                        "Please wait " + seconds +
+                                " seconds before requesting another OTP.",
                         null
                 );
             }
@@ -75,23 +89,34 @@ public class OtpService {
             repository.delete(oldOtp);
         }
 
-        String otp = String.valueOf(
-                ThreadLocalRandom.current()
-                        .nextInt(100000, 1000000)
-        );
+        // Generate 6-digit OTP
+        String otp =
+                String.valueOf(
+                        ThreadLocalRandom.current()
+                                .nextInt(100000, 1000000)
+                );
 
-        OtpVerification verification = new OtpVerification();
+        Instant createdAt = Instant.now();
+
+        OtpVerification verification =
+                new OtpVerification();
 
         verification.setPhoneNumber(phoneNumber);
         verification.setOtp(otp);
-        verification.setCreatedAt(LocalDateTime.now());
-        verification.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        verification.setCreatedAt(createdAt);
+        verification.setExpiresAt(
+                createdAt.plusSeconds(300)
+        );
         verification.setVerified(false);
         verification.setAttempts(0);
 
         repository.save(verification);
 
-        msg91Service.sendOtp(phoneNumber, otp);
+        // Send OTP through MSG91
+        msg91Service.sendOtp(
+                phoneNumber,
+                otp
+        );
 
         return new OtpResponse(
                 true,
@@ -103,9 +128,12 @@ public class OtpService {
     public OtpResponse verifyOtp(
             VerifyOtpRequest request) {
 
+        String phoneNumber =
+                request.getPhoneNumber();
+
         Optional<OtpVerification> optional =
                 repository.findTopByPhoneNumberOrderByCreatedAtDesc(
-                        request.getPhoneNumber()
+                        phoneNumber
                 );
 
         if (optional.isEmpty()) {
@@ -129,7 +157,10 @@ public class OtpService {
             );
         }
 
-        if (LocalDateTime.now().isAfter(
+        Instant now = Instant.now();
+
+        // Check expiry
+        if (now.isAfter(
                 verification.getExpiresAt())) {
 
             return new OtpResponse(
@@ -139,6 +170,7 @@ public class OtpService {
             );
         }
 
+        // Maximum verification attempts
         if (verification.getAttempts() >= 5) {
 
             return new OtpResponse(
@@ -148,6 +180,7 @@ public class OtpService {
             );
         }
 
+        // Check OTP
         if (!verification.getOtp()
                 .equals(request.getOtp())) {
 
@@ -164,21 +197,30 @@ public class OtpService {
             );
         }
 
+        // OTP is valid
         repository.delete(verification);
 
-        String phoneNumber = request.getPhoneNumber();
+        // Find existing user or create customer
+        User user =
+                userRepository
+                        .findByPhoneNumber(phoneNumber)
+                        .orElseGet(() -> {
 
-        User user = userRepository
-                .findByPhoneNumber(phoneNumber)
-                .orElseGet(() -> {
+                            User newUser =
+                                    new User();
 
-                    User newUser = new User();
+                            newUser.setPhoneNumber(
+                                    phoneNumber
+                            );
 
-                    newUser.setPhoneNumber(phoneNumber);
-                    newUser.setRole(Role.CUSTOMER);
+                            newUser.setRole(
+                                    Role.CUSTOMER
+                            );
 
-                    return userRepository.save(newUser);
-                });
+                            return userRepository.save(
+                                    newUser
+                            );
+                        });
 
         String token =
                 jwtService.generateToken(
