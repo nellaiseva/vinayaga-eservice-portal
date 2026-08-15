@@ -17,7 +17,12 @@ function CustomerProfileCheck() {
             );
 
         axios.get(
-            `${API_URL}/customer/profile/${phoneNumber}`
+            `${API_URL}/customer/profile/${phoneNumber}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            }
         )
             .then(res => {
 

@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import com.eservice1.submission.service.RequestAccessService;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/documents")
@@ -26,18 +28,21 @@ public class DocumentController {
     private final RealFileUploadService uploadService;
 
     private final UploadedDocumentRepository documentRepository;
+    private final RequestAccessService requestAccessService;
 
     public DocumentController(
 
             UploadedDocumentRepository documentRepository,
 
-            RealFileUploadService uploadService
+            RealFileUploadService uploadService,
+            RequestAccessService requestAccessService
 
     ) {
 
         this.documentRepository = documentRepository;
 
         this.uploadService = uploadService;
+        this.requestAccessService = requestAccessService;
 
     }
     @PostMapping("/upload")
@@ -48,9 +53,20 @@ public class DocumentController {
             @RequestParam MultipartFile file,
 
             @RequestParam(defaultValue = "false")
-            boolean isResult
+            boolean isResult,
+
+            Authentication authentication
 
     ) throws IOException {
+
+        requestAccessService.requireRequestAccess(requestId, authentication);
+
+        if (isResult) {
+            requestAccessService.requireResultDocumentUploadAccess(
+                    requestId,
+                    authentication
+            );
+        }
 
         return uploadService.uploadFile(
 
@@ -66,8 +82,11 @@ public class DocumentController {
     @GetMapping("/request/{requestId}")
     public java.util.List<UploadedDocument>
     getDocumentsByRequest(
-            @PathVariable Long requestId
+            @PathVariable Long requestId,
+            Authentication authentication
     ) {
+
+        requestAccessService.requireRequestAccess(requestId, authentication);
 
         return documentRepository
                 .findByRequest_IdAndResultDocument(
@@ -83,9 +102,13 @@ public class DocumentController {
     public java.util.List<UploadedDocument>
     getResultDocuments(
 
-            @PathVariable Long requestId
+            @PathVariable Long requestId,
+
+            Authentication authentication
 
     ) {
+
+        requestAccessService.requireRequestAccess(requestId, authentication);
 
         return documentRepository
                 .findByRequest_IdAndResultDocument(

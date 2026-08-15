@@ -62,6 +62,11 @@ function CustomerProfileEdit() {
                     phoneNumber,
                     customerName,
                     dob
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
                 }
             );
             for (const fieldId in values) {
@@ -72,6 +77,11 @@ function CustomerProfileEdit() {
                         fieldId,
                         phoneNumber,
                         value: values[fieldId]
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`
+                        }
                     }
                 );
             }
@@ -113,7 +123,12 @@ function CustomerProfileEdit() {
             );
 
         axios.get(
-            `${API_URL}/customer/profile/${phoneNumber}`
+            `${API_URL}/customer/profile/${phoneNumber}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            }
         )
             .then(res => {
 
@@ -136,7 +151,12 @@ function CustomerProfileEdit() {
             );
 
         axios.get(
-            `${API_URL}/customer-form-responses/${phoneNumber}`
+            `${API_URL}/customer-form-responses/${phoneNumber}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            }
         )
             .then(res => {
 

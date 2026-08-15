@@ -13,6 +13,10 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.io.File;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import com.eservice1.employee.dto.CreateEmployeeRequest;
 @RestController
 @RequestMapping("/employees")
@@ -98,6 +102,18 @@ public class EmployeeController {
 
         return employeeService
                 .promoteUser(userId);
+    }
+    @GetMapping("/{employeeId}/profile-image")
+    public ResponseEntity<Resource> getProfileImage(
+            @PathVariable Long employeeId,
+            Authentication authentication) {
+
+        File image = employeeService.getProfileImage(
+                employeeId,
+                authentication
+        );
+
+        return ResponseEntity.ok(new FileSystemResource(image));
     }
     @GetMapping("/{employeeId}/performance")
     public EmployeePerformanceDTO getEmployeePerformance(

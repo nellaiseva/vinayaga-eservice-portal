@@ -32,6 +32,11 @@ function CustomerProfile() {
                 phoneNumber,
                 customerName,
                 dob
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
             }
         );
 

@@ -25,6 +25,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import com.eservice1.feedback.repository.FeedbackRepository;
 import com.eservice1.submission.dto.CustomerRequestViewDTO;
+import com.eservice1.customer.entity.CustomerProfile;
+import com.eservice1.customer.repository.CustomerProfileRepository;
+import org.springframework.security.core.Authentication;
 @Service
 public class CustomerRequestService {
 
@@ -33,19 +36,38 @@ public class CustomerRequestService {
 
     private final TaskRepository taskRepository;
     private final FeedbackRepository feedbackRepository;
+    private final CustomerProfileRepository customerProfileRepository;
+    private final RequestAccessService requestAccessService;
     public CustomerRequestService(
             CustomerRequestRepository requestRepository,
             PortalServiceRepository serviceRepository,
             TaskRepository taskRepository,
-            FeedbackRepository feedbackRepository) {
+            FeedbackRepository feedbackRepository,
+            CustomerProfileRepository customerProfileRepository,
+            RequestAccessService requestAccessService) {
 
         this.requestRepository = requestRepository;
         this.serviceRepository = serviceRepository;
         this.taskRepository = taskRepository;
         this.feedbackRepository = feedbackRepository;
+        this.customerProfileRepository = customerProfileRepository;
+        this.requestAccessService = requestAccessService;
     }
 
-    public CustomerRequest createRequest(CustomerRequestDTO dto) {
+    public CustomerRequest createRequest(
+            CustomerRequestDTO dto,
+            String authenticatedPhoneNumber) {
+
+        CustomerProfile customerProfile = customerProfileRepository
+                .findByPhoneNumber(authenticatedPhoneNumber);
+
+        if (customerProfile == null
+                || customerProfile.getCustomerName() == null
+                || customerProfile.getCustomerName().isBlank()) {
+            throw new InvalidOperationException(
+                    "Complete your customer profile before creating a request."
+            );
+        }
 
         PortalService service =
                 serviceRepository.findById(
@@ -66,8 +88,8 @@ public class CustomerRequestService {
 
         CustomerRequest request = new CustomerRequest();
 
-        request.setCustomerName(dto.getCustomerName());
-        request.setPhoneNumber(dto.getPhoneNumber());
+        request.setCustomerName(customerProfile.getCustomerName());
+        request.setPhoneNumber(authenticatedPhoneNumber);
         request.setService(service);
         request.setStatus(RequestStatus.PENDING);
         request.setPaymentStatus(
@@ -97,17 +119,14 @@ public class CustomerRequestService {
     }public CustomerRequest updatePayment(
             Long requestId,
             PaymentStatus paymentStatus,
-            Double amount
+            Double amount,
+            Authentication authentication
     ) {
 
-        CustomerRequest request =
-                requestRepository
-                        .findById(requestId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Request not found."
-                                )
-                        );
+        CustomerRequest request = requestAccessService.requirePaymentAccess(
+                requestId,
+                authentication
+        );
         if (
 
                 paymentStatus == PaymentStatus.PAID
@@ -243,9 +262,13 @@ public class CustomerRequestService {
 
             int page,
 
-            int size
+            int size,
+
+            Authentication authentication
 
     ) {
+
+        requestAccessService.requireCustomerPhone(phoneNumber, authentication);
 
         Pageable pageable =
 

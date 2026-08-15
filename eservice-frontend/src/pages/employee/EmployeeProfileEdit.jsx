@@ -9,7 +9,7 @@ import {
     uploadProfileImage
 } from "../../services/employeeProfileService";
 
-import { API_URL } from "../../config";
+import secureApi from "../../api/secureApi";
 import "./EmployeeProfileEdit.css"
 function EmployeeProfileEdit() {
 
@@ -20,6 +20,7 @@ function EmployeeProfileEdit() {
     const [selectedImage, setSelectedImage] = useState(null);
 
     const [preview, setPreview] = useState("");
+    const [profileImageUrl, setProfileImageUrl] = useState("");
     const [saving, setSaving] = useState(false);
     useEffect(() => {
 
@@ -32,6 +33,15 @@ function EmployeeProfileEdit() {
         const data = await getMyProfile();
 
         setEmployee(data);
+
+        if (data.profileImage) {
+            const response = await secureApi.get(
+                `/employees/${data.id}/profile-image`,
+                { responseType: "blob" }
+            );
+
+            setProfileImageUrl(URL.createObjectURL(response.data));
+        }
 
     };
 
@@ -104,8 +114,8 @@ function EmployeeProfileEdit() {
                                             src={
                                                 preview
                                                     ? preview
-                                                    : employee.profileImage
-                                                        ? `${API_URL}/uploads/employees/${employee.profileImage}`
+                                                    : profileImageUrl
+                                                        ? profileImageUrl
                                                         : "/default-avatar.png"
                                             }
                                             alt="Profile"

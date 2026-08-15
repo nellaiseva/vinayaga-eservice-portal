@@ -14,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import java.io.File;
+import com.eservice1.submission.service.RequestAccessService;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/receipts")
@@ -22,25 +24,33 @@ public class ReceiptController {
     private final ReceiptService receiptService;
 
     private final ReceiptRepository receiptRepository;
+    private final RequestAccessService requestAccessService;
 
     public ReceiptController(
             ReceiptService receiptService,
-            ReceiptRepository receiptRepository) {
+            ReceiptRepository receiptRepository,
+            RequestAccessService requestAccessService) {
 
         this.receiptService = receiptService;
         this.receiptRepository = receiptRepository;
+        this.requestAccessService = requestAccessService;
     }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadReceipt(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
 
         Receipt receipt =
                 receiptRepository.findById(id)
                         .orElseThrow();
 
-        File file =
-                new File(receipt.getFilePath());
+        requestAccessService.requireRequestAccess(
+                receipt.getTask().getRequest().getId(),
+                authentication
+        );
+
+        File file = receiptService.getValidatedReceiptFile(receipt);
 
         Resource resource =
                 new FileSystemResource(file);
@@ -58,12 +68,14 @@ public class ReceiptController {
     @PostMapping("/{taskId}/upload")
     public Receipt uploadReceipt(
             @PathVariable Long taskId,
-            @RequestParam MultipartFile file)
+            @RequestParam MultipartFile file,
+            Authentication authentication)
             throws IOException {
 
         return receiptService.uploadReceipt(
                 taskId,
-                file
+                file,
+                authentication
         );
     }
 }

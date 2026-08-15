@@ -4,6 +4,7 @@ import DashboardLayout
     from "../../layouts/DashboardLayout";
 import { Link } from "react-router-dom";
 import { API_URL } from "../../config";
+import secureApi from "../../api/secureApi";
 import {
     ResponsiveContainer,
     LineChart,
@@ -20,6 +21,7 @@ function Employees() {
     const [employees, setEmployees] =
         useState([]);
     const [dashboard, setDashboard] = useState(null);
+    const [topEmployeeImageUrl, setTopEmployeeImageUrl] = useState("");
     const [searchName,
         setSearchName] =
         useState("");
@@ -55,9 +57,18 @@ function Employees() {
                 }
             }
         )
-            .then(res => {
+            .then(async res => {
 
                 setDashboard(res.data);
+
+                if (res.data.employeeOfMonth?.profileImage) {
+                    const imageResponse = await secureApi.get(
+                        `/employees/${res.data.employeeOfMonth.id}/profile-image`,
+                        { responseType: "blob" }
+                    );
+
+                    setTopEmployeeImageUrl(URL.createObjectURL(imageResponse.data));
+                }
 
             })
             .catch(console.log);
@@ -122,9 +133,9 @@ function Employees() {
 
                                     <img
                                         src={
-                                            dashboard.employeeOfMonth?.profileImage
+                                            topEmployeeImageUrl
                                                 ?
-                                                `${API_URL}/uploads/employees/${dashboard.employeeOfMonth.profileImage}`
+                                                topEmployeeImageUrl
                                                 :
                                                 "/default-avatar.png"
                                         }

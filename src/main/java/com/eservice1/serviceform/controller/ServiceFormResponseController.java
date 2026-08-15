@@ -9,36 +9,47 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import com.eservice1.serviceform.dto.ServiceFormResponseViewDTO;
+import com.eservice1.submission.service.RequestAccessService;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/service-form-responses")
 public class ServiceFormResponseController {
 
     private final ServiceFormResponseService service;
+    private final RequestAccessService requestAccessService;
 
     public ServiceFormResponseController(
-            ServiceFormResponseService service
+            ServiceFormResponseService service,
+            RequestAccessService requestAccessService
     ) {
         this.service = service;
+        this.requestAccessService = requestAccessService;
     }
 
     @PostMapping
     public void save(
 
             @RequestBody
-            List<@Valid ServiceFormResponseDTO> responses
+            List<@Valid ServiceFormResponseDTO> responses,
+            Authentication authentication
 
     ) {
 
-        service.saveResponses(
-                responses
-        );
+        responses.forEach(response -> requestAccessService.requireCustomerRequestAccess(
+                response.getRequestId(),
+                authentication
+        ));
+
+        service.saveResponses(responses);
     }
 
     @GetMapping("/{requestId}")
     public List<ServiceFormResponse> get(
-            @PathVariable Long requestId
+            @PathVariable Long requestId,
+            Authentication authentication
     ) {
+        requestAccessService.requireRequestAccess(requestId, authentication);
         return service.getResponses(
                 requestId
         );
@@ -46,8 +57,11 @@ public class ServiceFormResponseController {
     @GetMapping("/request/{requestId}")
     public List<ServiceFormResponseViewDTO>
     getResponseDetails(
-            @PathVariable Long requestId
+            @PathVariable Long requestId,
+            Authentication authentication
     ) {
+
+        requestAccessService.requireRequestAccess(requestId, authentication);
 
         return service.getResponseDetails(
                 requestId

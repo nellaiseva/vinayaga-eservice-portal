@@ -20,12 +20,33 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * Endpoints that intentionally allow anonymous access. JwtFilter uses this
+     * same list to avoid parsing bearer tokens for public requests.
+     */
+    public static final String[] PUBLIC_URL_PATTERNS = {
+            "/auth/login",
+            "/auth/owner",
+            "/admin/requests/test",
+            "/login",
+            "/customer-login",
+            "/services/**",
+            "/service-categories/active",
+            "/customer-form-fields/**",
+            "/service-form-fields/**",
+            "/feedback/**"
+    };
+
     private final JwtFilter jwtFilter;
 
+    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+
     public SecurityConfig(
-            JwtFilter jwtFilter) {
+            JwtFilter jwtFilter,
+            JwtAuthenticationEntryPoint authenticationEntryPoint) {
 
         this.jwtFilter = jwtFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
 
     }
 
@@ -42,30 +63,46 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+                .exceptionHandling(exceptions ->
+                        exceptions.authenticationEntryPoint(authenticationEntryPoint)
+                )
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
 
-                        .requestMatchers(
-                                "/auth/login",
-                                "/auth/owner"
-                        ).permitAll()
+                        .requestMatchers(PUBLIC_URL_PATTERNS).permitAll()
 
                         .requestMatchers("/auth/register")
                         .hasAuthority("OWNER")
 
                         .requestMatchers(
-                                "/admin/requests/test"
-                        )
-                        .permitAll()
-                        .requestMatchers("/documents/download/**")
-                        .permitAll()
-                        .requestMatchers(
-                                "/customer/**"
-                        )
-                        .permitAll()
+                                "/customer/send-otp",
+                                "/customer/verify-otp"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/requests")
+                        .hasAuthority("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/requests/phone/**")
+                        .hasAuthority("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/requests/*/payment")
+                        .hasAnyAuthority("OWNER", "EMPLOYEE")
+                        .requestMatchers("/requests/**")
+                        .hasAnyAuthority("CUSTOMER", "EMPLOYEE", "OWNER")
+
+                        .requestMatchers("/documents/**")
+                        .hasAnyAuthority("CUSTOMER", "EMPLOYEE", "OWNER")
+
+                        .requestMatchers("/customer/profile/**")
+                        .hasAuthority("CUSTOMER")
+                        .requestMatchers("/customer-form-responses/**")
+                        .hasAuthority("CUSTOMER")
+                        .requestMatchers("/service-form-responses/**")
+                        .hasAnyAuthority("CUSTOMER", "EMPLOYEE", "OWNER")
+
+                        .requestMatchers("/receipts/**")
+                        .hasAnyAuthority("EMPLOYEE", "OWNER")
 
                         //.requestMatchers(
                         //    HttpMethod.GET,
@@ -85,11 +122,6 @@ public class SecurityConfig {
                                 "OWNER",
                                 "EMPLOYEE"
                         )
-                        .requestMatchers(
-                                "/login",
-                                "/customer-login",
-                                "/customer/profile/**"
-                        ).permitAll()
                         .requestMatchers("/users/**")
                         .hasAuthority("OWNER")
 
@@ -97,11 +129,7 @@ public class SecurityConfig {
                         .hasAnyAuthority("EMPLOYEE", "OWNER")
 
                         .requestMatchers("/employees/dashboard")
-                        .permitAll()
-
-                        .requestMatchers("/uploads/**")
-                        .permitAll()
-
+                        .hasAuthority("OWNER")
                         .requestMatchers("/employees/**")
                         .hasAnyAuthority(
                                 "OWNER",
@@ -113,41 +141,9 @@ public class SecurityConfig {
                                 "OWNER",
                                 "EMPLOYEE"
                         )
-                        .requestMatchers("/requests/**")
-                        .permitAll()
-                        .requestMatchers(
-                                "/services/**"
-                        ).permitAll()
-                        .requestMatchers("/service-categories/active")
-                        .permitAll()
 
                         .requestMatchers("/service-categories/**")
                         .hasAuthority("OWNER")
-                        .requestMatchers("/customer-form-fields/**")
-                        .permitAll()
-
-                        .requestMatchers(
-                                "/customer-form-responses/**"
-                        )
-                        .permitAll()
-
-                        .requestMatchers("/service-form-fields/**")
-                        .permitAll()
-
-                        .requestMatchers("/service-form-responses/**")
-                        .permitAll()
-
-                        .requestMatchers(
-                                "/documents/request/**"
-                        )
-                        .permitAll()
-
-                        .requestMatchers("/documents/upload")
-                        .permitAll()
-
-
-                        .requestMatchers("/feedback/**")
-                        .permitAll()
                         .anyRequest()
                         .authenticated()
 

@@ -7,22 +7,28 @@ import com.eservice1.customer.dto.VerifyOtpRequest;
 import com.eservice1.customer.entity.OtpVerification;
 import com.eservice1.customer.repository.OtpVerificationRepository;
 import org.springframework.stereotype.Service;
-
+import com.eservice1.common.Role;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-
+import com.eservice1.user.entity.User;
+import com.eservice1.user.repository.UserRepository;
 @Service
 public class OtpService {
-
     private final OtpVerificationRepository repository;
     private final JwtService jwtService;
+    private final Msg91Service msg91Service;
+    private final UserRepository userRepository;
 
     public OtpService(OtpVerificationRepository repository,
-                      JwtService jwtService) {
+                      JwtService jwtService,
+                      Msg91Service msg91Service,
+                      UserRepository userRepository) {
 
         this.repository = repository;
         this.jwtService = jwtService;
+        this.msg91Service = msg91Service;
+        this.userRepository = userRepository;
     }
 
     public OtpResponse sendOtp(SendOtpRequest request) {
@@ -85,10 +91,7 @@ public class OtpService {
 
         repository.save(verification);
 
-        System.out.println("--------------------------------");
-        System.out.println("PHONE : " + phoneNumber);
-        System.out.println("OTP   : " + otp);
-        System.out.println("--------------------------------");
+        msg91Service.sendOtp(phoneNumber, otp);
 
         return new OtpResponse(
                 true,
@@ -163,9 +166,23 @@ public class OtpService {
 
         repository.delete(verification);
 
+        String phoneNumber = request.getPhoneNumber();
+
+        User user = userRepository
+                .findByPhoneNumber(phoneNumber)
+                .orElseGet(() -> {
+
+                    User newUser = new User();
+
+                    newUser.setPhoneNumber(phoneNumber);
+                    newUser.setRole(Role.CUSTOMER);
+
+                    return userRepository.save(newUser);
+                });
+
         String token =
                 jwtService.generateToken(
-                        request.getPhoneNumber()
+                        user.getPhoneNumber()
                 );
 
         return new OtpResponse(

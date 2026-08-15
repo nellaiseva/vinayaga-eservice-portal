@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import com.eservice1.submission.service.RequestAccessService;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/documents")
@@ -16,22 +18,31 @@ public class UploadedDocumentController {
 
     private final UploadedDocumentRepository documentRepository;
     private final StorageService storageService;
+    private final RequestAccessService requestAccessService;
 
     public UploadedDocumentController(
             UploadedDocumentRepository documentRepository,
-            StorageService storageService) {
+            StorageService storageService,
+            RequestAccessService requestAccessService) {
 
         this.documentRepository = documentRepository;
         this.storageService = storageService;
+        this.requestAccessService = requestAccessService;
     }
 
     @GetMapping("/download/{documentId}")
     public ResponseEntity<byte[]> downloadDocument(
-            @PathVariable Long documentId) throws IOException {
+            @PathVariable Long documentId,
+            Authentication authentication) throws IOException {
 
         UploadedDocument document = documentRepository
                 .findById(documentId)
                 .orElseThrow();
+
+        requestAccessService.requireRequestAccess(
+                document.getRequest().getId(),
+                authentication
+        );
 
         byte[] fileBytes =
                 storageService.download(document.getFilePath());

@@ -16,11 +16,12 @@ public class CustomerProfileService {
     }
 
     public CustomerProfile save(
-            CustomerProfile profile) {
+            CustomerProfile profile,
+            String authenticatedPhoneNumber) {
 
         CustomerProfile existing =
                 repository.findByPhoneNumber(
-                        profile.getPhoneNumber()
+                        authenticatedPhoneNumber
                 );
 
         if (existing != null) {
@@ -38,22 +39,14 @@ public class CustomerProfileService {
             );
         }
 
-        return repository.save(
-                profile
-        );
+        profile.setPhoneNumber(authenticatedPhoneNumber);
+
+        return repository.save(profile);
     }
     public CustomerProfile getByPhone(String phoneNumber) {
 
-        System.out.println("Requested phone: " + phoneNumber);
-
         CustomerProfile profile =
                 repository.findByPhoneNumber(phoneNumber);
-
-        System.out.println("Repository result: " + profile);
-
-        if (profile != null) {
-            System.out.println("Found profile phone: " + profile.getPhoneNumber());
-        }
 
         if (profile == null) {
             throw new RuntimeException("Profile Not Found");

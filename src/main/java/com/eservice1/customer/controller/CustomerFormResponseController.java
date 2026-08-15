@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import com.eservice1.submission.service.RequestAccessService;
 
 
 @RestController
@@ -15,29 +17,38 @@ import java.util.List;
 public class CustomerFormResponseController {
 
     private final CustomerFormResponseService service;
+    private final RequestAccessService requestAccessService;
 
     public CustomerFormResponseController(
-            CustomerFormResponseService service) {
+            CustomerFormResponseService service,
+            RequestAccessService requestAccessService) {
 
         this.service = service;
+        this.requestAccessService = requestAccessService;
     }
 
     @PostMapping
     public CustomerFormResponse save(
 
             @Valid
-            @RequestBody CustomerFormResponseDTO dto
+            @RequestBody CustomerFormResponseDTO dto,
+
+            Authentication authentication
 
     ) {
 
-        return service.save(dto);
+        return service.save(dto, authentication.getName());
 
     }
 
     @GetMapping("/{phoneNumber}")
     public List<CustomerFormResponse>
     getByPhoneNumber(
-            @PathVariable String phoneNumber) {
+            @PathVariable String phoneNumber,
+
+            Authentication authentication) {
+
+        requestAccessService.requireCustomerPhone(phoneNumber, authentication);
 
         return service.getByPhoneNumber(
                 phoneNumber
@@ -45,8 +56,10 @@ public class CustomerFormResponseController {
     }
     @GetMapping("/autofill/{phoneNumber}")
     public Map<String, String> getAutoFill(
-            @PathVariable String phoneNumber
+            @PathVariable String phoneNumber,
+            Authentication authentication
     ) {
+        requestAccessService.requireCustomerPhone(phoneNumber, authentication);
         return service.getAutoFillData(
                 phoneNumber
         );

@@ -25,7 +25,8 @@ public class CustomerFormResponseService {
     }
 
     public CustomerFormResponse save(
-            CustomerFormResponseDTO dto) {
+            CustomerFormResponseDTO dto,
+            String authenticatedPhoneNumber) {
 
         CustomerFormField field =
                 fieldRepository.findById(
@@ -36,7 +37,7 @@ public class CustomerFormResponseService {
                 new CustomerFormResponse();
 
         response.setPhoneNumber(
-                dto.getPhoneNumber()
+                authenticatedPhoneNumber
         );
 
         response.setField(field);

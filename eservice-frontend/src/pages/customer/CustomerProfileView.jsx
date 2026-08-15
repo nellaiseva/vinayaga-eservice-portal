@@ -26,7 +26,12 @@ function CustomerProfileView() {
             );
 
         axios.get(
-            `${API_URL}/customer-form-responses/${phoneNumber}`
+            `${API_URL}/customer-form-responses/${phoneNumber}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            }
         )
             .then(res => {
 

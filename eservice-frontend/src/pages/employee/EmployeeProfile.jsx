@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { getMyProfile } from "../../services/employeeProfileService";
+import secureApi from "../../api/secureApi";
 import EmployeeLayout from "../../layouts/EmployeeLayout";
-import { API_URL } from "../../config";
 import "./EmployeeProfile.css"
 export default function EmployeeProfile() {
 
     const navigate = useNavigate();
 
     const [employee, setEmployee] = useState(null);
+    const [profileImageUrl, setProfileImageUrl] = useState("");
 
     useEffect(() => {
 
@@ -22,6 +23,15 @@ export default function EmployeeProfile() {
         const data = await getMyProfile();
 
         setEmployee(data);
+
+        if (data.profileImage) {
+            const response = await secureApi.get(
+                `/employees/${data.id}/profile-image`,
+                { responseType: "blob" }
+            );
+
+            setProfileImageUrl(URL.createObjectURL(response.data));
+        }
 
     };
 
@@ -59,8 +69,8 @@ export default function EmployeeProfile() {
 
                                 <img
                                     src={
-                                        employee.profileImage
-                                            ? `${API_URL}/uploads/employees/${employee.profileImage}`
+                                        profileImageUrl
+                                            ? profileImageUrl
                                             : "/default-avatar.png"
                                     }
                                     alt="Profile"

@@ -2,6 +2,7 @@ import {
     useParams,
     useNavigate
 } from "react-router-dom";
+import publicApi from "../../api/publicApi";import secureApi from "../../api/secureApi";
 import CustomerNavbar from "../../components/CustomerNavbar";
 //import { useParams } from "react-router-dom";
 import "./ServiceDocuments.css";
@@ -84,7 +85,12 @@ function ServiceDocuments() {
                 }));
             await axios.post(
                 (`${API_URL}/service-form-responses`),
-                formResponses
+                formResponses,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
            // console.log(response.data);
             const uploadFile = async (
@@ -161,25 +167,10 @@ function ServiceDocuments() {
     };
     useEffect(() => {
 
-        const token =
-            localStorage.getItem("token");
-
-        axios.get(
-            `${API_URL}/services/${id}/documents`,
-
-            {
-                headers: {
-                    Authorization:
-                        `Bearer ${token}`
-                }
-            }
-        )
+        publicApi
+            .get(`/services/${id}/documents`)
             .then(res => {
-
-                setRequiredDocuments(
-                    res.data
-                );
-
+                setRequiredDocuments(res.data);
             })
             .catch(console.error);
 
@@ -222,7 +213,12 @@ function ServiceDocuments() {
             );
 
         axios.get(
-            `${API_URL}/customer-form-responses/autofill/${phoneNumber}`
+            `${API_URL}/customer-form-responses/autofill/${phoneNumber}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            }
         )
             .then(res => {
 

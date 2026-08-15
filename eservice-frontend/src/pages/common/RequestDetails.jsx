@@ -45,14 +45,23 @@ function RequestDetails() {
             });
 
         axios.get(
-            `${API_URL}/service-form-responses/request/${id}`
+            `${API_URL}/service-form-responses/request/${id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
         )
             .then(res => {
                 setFormResponses(res.data);
             });
         Promise.all([
-            axios.get(`${API_URL}/documents/request/${id}`),
-            axios.get(`${API_URL}/documents/request/${id}/results`)
+            axios.get(`${API_URL}/documents/request/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }),
+            axios.get(`${API_URL}/documents/request/${id}/results`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
         ])
             .then(([customerRes, resultRes]) => {
 
@@ -73,6 +82,34 @@ function RequestDetails() {
     console.log("All documents:", documents);
     console.log("Customer docs:", customerDocuments);
     console.log("Result docs:", resultDocuments);
+    const downloadDocument = async (documentId) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            const response = await axios.get(
+                `${API_URL}/documents/download/${documentId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    responseType: "blob"
+                }
+            );
+
+            const url = window.URL.createObjectURL(
+                new Blob([response.data])
+            );
+
+            window.open(url, "_blank");
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 1000);
+
+        } catch (error) {
+            console.error("Document download failed:", error);
+        }
+    };
     return (
 
         <div className="page-bg">

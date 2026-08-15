@@ -29,12 +29,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
+import java.io.File;
 import com.eservice1.employee.dto.MonthlyRevenueDTO;
 import com.eservice1.employee.dto.MonthlyCompletedDTO;
 import com.eservice1.employee.dto.EmployeeOfMonthDTO;
 import com.eservice1.employee.dto.EmployeeDashboardDTO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.eservice1.employee.dto.CreateEmployeeRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 @Service
 public class EmployeeService {
 
@@ -219,6 +222,40 @@ public class EmployeeService {
         employeeRepository.save(employee);
 
         return fileName;
+    }
+
+    public File getProfileImage(
+            Long employeeId,
+            Authentication authentication) {
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found."));
+
+        boolean owner = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "OWNER".equals(authority.getAuthority()));
+        Employee authenticatedEmployee = employeeRepository
+                .findByPhoneNumber(authentication.getName());
+
+        if (!owner && (authenticatedEmployee == null
+                || !employeeId.equals(authenticatedEmployee.getId()))) {
+            throw new AccessDeniedException("You are not authorized to access this profile image.");
+        }
+
+        if (employee.getProfileImage() == null || employee.getProfileImage().isBlank()) {
+            throw new ResourceNotFoundException("Profile image not found.");
+        }
+
+        Path imageDirectory = Paths.get("uploads", "employees")
+                .toAbsolutePath()
+                .normalize();
+        Path imagePath = imageDirectory.resolve(employee.getProfileImage())
+                .normalize();
+
+        if (!imagePath.startsWith(imageDirectory) || !Files.isRegularFile(imagePath)) {
+            throw new ResourceNotFoundException("Profile image not found.");
+        }
+
+        return imagePath.toFile();
     }
 
     public Employee promoteUser(
