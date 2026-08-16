@@ -240,8 +240,7 @@ function RequestDetails() {
 
                                         <a
                                             key={doc.id}
-                                            href={`http://localhost:8080/documents/download/${doc.id}`}
-                                            target="_blank"
+                                            href={`${API_URL}/documents/download/${doc.id}`}                                            target="_blank"
                                             rel="noreferrer"
                                             className="document-card"
                                         >
@@ -296,8 +295,7 @@ function RequestDetails() {
 
                                                     <a
                                                         key={doc.id}
-                                                        href={`http://localhost:8080/documents/download/${doc.id}`}
-                                                        target="_blank"
+                                                        href={`${API_URL}/documents/download/${doc.id}`}                                                        target="_blank"
                                                         rel="noreferrer"
                                                         className="result-document-card"
                                                     >
