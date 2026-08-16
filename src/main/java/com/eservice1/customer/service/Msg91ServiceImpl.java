@@ -4,7 +4,7 @@ import com.eservice1.config.Msg91Properties;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-
+import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class Msg91ServiceImpl implements Msg91Service {
                 List.of(recipient)
         );
 
-        String response =
+        ResponseEntity<String> response =
                 restClient.post()
                         .header(
                                 "authkey",
@@ -73,12 +73,11 @@ public class Msg91ServiceImpl implements Msg91Service {
                         )
                         .body(body)
                         .retrieve()
-                        .body(String.class);
-
-       //System.out.println("================================");
-       // System.out.println("MSG91 RESPONSE:");
-       // System.out.println(response);
-        //System.out.println("================================");
+                        .toEntity(String.class);
+        System.out.println("========== MSG91 RESPONSE ==========");
+        System.out.println("STATUS: " + response.getStatusCode());
+        System.out.println("BODY: " + response.getBody());
+        System.out.println("====================================");
     }
 
     private String normalizeIndianNumber(
