@@ -1,28 +1,93 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageTransition from "../../components/PageTransition";
 import { motion } from "framer-motion";
 import "./CustomerLogin.css";import axios from "axios";
 
 function CustomerLogin() {
+    const [phoneNumber, setPhoneNumber] = useState(
+        () => localStorage.getItem("otpPhoneNumber") || ""
+    );
 
-    const [phoneNumber, setPhoneNumber] =
-        useState("");
+    const [otp, setOtp] = useState("");
 
-    const [otp, setOtp] =
-        useState("");
+    const [otpSent, setOtpSent] = useState(
+        () => localStorage.getItem("otpSent") === "true"
+    );
 
-    const [otpSent, setOtpSent] =
-        useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const [timer, setTimer] = useState(() => {
+
+        const cooldownUntil =
+            Number(localStorage.getItem("otpCooldownUntil"));
+
+        if (!cooldownUntil) {
+            return 0;
+        }
+
+        const remaining =
+            Math.ceil(
+                (cooldownUntil - Date.now()) / 1000
+            );
+
+        return remaining > 0 ? remaining : 0;
+    });
 
     const navigate =
         useNavigate();
-    const [loading, setLoading] = useState(false);
 
-    const [timer, setTimer] = useState(0);
     const API_URL =
         import.meta.env.VITE_API_URL ||
         "http://localhost:8080";
+    useEffect(() => {
+
+        if (!otpSent) {
+            return;
+        }
+
+        const updateTimer = () => {
+
+            const cooldownUntil =
+                Number(
+                    localStorage.getItem(
+                        "otpCooldownUntil"
+                    )
+                );
+
+            if (!cooldownUntil) {
+                setTimer(0);
+                return;
+            }
+
+            const remaining =
+                Math.ceil(
+                    (cooldownUntil - Date.now()) / 1000
+                );
+
+            if (remaining <= 0) {
+
+                setTimer(0);
+
+                localStorage.removeItem(
+                    "otpCooldownUntil"
+                );
+
+            } else {
+
+                setTimer(remaining);
+
+            }
+        };
+
+        updateTimer();
+
+        const interval =
+            setInterval(updateTimer, 1000);
+
+        return () => clearInterval(interval);
+
+    }, [otpSent]);
     const sendOtp = async () => {
 
         if (phoneNumber.length !== 10) {
@@ -50,27 +115,28 @@ function CustomerLogin() {
 
                 setOtpSent(true);
 
-                alert(response.data.message);
+                localStorage.setItem(
+                    "otpSent",
+                    "true"
+                );
+
+                localStorage.setItem(
+                    "otpPhoneNumber",
+                    phoneNumber
+                );
+
+                const cooldownUntil =
+                    Date.now() + 60 * 1000;
+
+                localStorage.setItem(
+                    "otpCooldownUntil",
+                    cooldownUntil.toString()
+                );
 
                 setTimer(60);
 
-                const interval = setInterval(() => {
+                alert(response.data.message);
 
-                    setTimer(prev => {
-
-                        if (prev <= 1) {
-
-                            clearInterval(interval);
-
-                            return 0;
-
-                        }
-
-                        return prev - 1;
-
-                    });
-
-                }, 1000);
 
             } else {
 
@@ -94,6 +160,10 @@ function CustomerLogin() {
 
         }
 
+    };
+
+    const resendOtp = async () => {
+        await sendOtp();
     };
 
     const verifyOtp = async () => {
@@ -147,6 +217,9 @@ function CustomerLogin() {
                 phoneNumber
 
             );
+            localStorage.removeItem("otpSent");
+            localStorage.removeItem("otpPhoneNumber");
+            localStorage.removeItem("otpCooldownUntil");
 
             navigate("/customer-profile-check");
 
@@ -262,17 +335,40 @@ function CustomerLogin() {
                         )
                     }
                     {
-                        otpSent && timer > 0 && (
-
-                            <p
+                        otpSent && (
+                            <div
                                 style={{
                                     marginTop: "10px",
-                                    color: "#666"
+                                    textAlign: "center"
                                 }}
                             >
-                                Resend OTP in {timer}s
-                            </p>
-
+                                {timer > 0 ? (
+                                    <p
+                                        style={{
+                                            color: "#666",
+                                            margin: 0
+                                        }}
+                                    >
+                                        Resend OTP in {timer}s
+                                    </p>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={resendOtp}
+                                        disabled={loading}
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#2457c5",
+                                            cursor: "pointer",
+                                            fontSize: "15px",
+                                            fontWeight: "600"
+                                        }}
+                                    >
+                                        {loading ? "Sending..." : "Resend OTP"}
+                                    </button>
+                                )}
+                            </div>
                         )
                     }
                     <div className="login-footer">
