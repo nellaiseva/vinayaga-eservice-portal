@@ -142,6 +142,7 @@ public class SecurityConfig {
                                 "EMPLOYEE"
                         )
 
+                        .requestMatchers("/health").permitAll()
                         .requestMatchers("/service-categories/**")
                         .hasAuthority("OWNER")
                         .anyRequest()
