@@ -82,32 +82,62 @@ function RequestDetails() {
     console.log("All documents:", documents);
     console.log("Customer docs:", customerDocuments);
     console.log("Result docs:", resultDocuments);
-    const downloadDocument = async (documentId) => {
+    const downloadDocument = async (documentId, fileName) => {
+
         try {
-            const token = localStorage.getItem("token");
+
+            const token =
+                localStorage.getItem("token");
 
             const response = await axios.get(
                 `${API_URL}/documents/download/${documentId}`,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`
+                        Authorization:
+                            `Bearer ${token}`
                     },
                     responseType: "blob"
                 }
             );
 
-            const url = window.URL.createObjectURL(
-                new Blob([response.data])
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        response.headers["content-type"] ||
+                        "application/octet-stream"
+                }
             );
 
-            window.open(url, "_blank");
+            const url =
+                window.URL.createObjectURL(blob);
 
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-            }, 1000);
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+
+            link.download =
+                fileName || "document";
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
 
         } catch (error) {
-            console.error("Document download failed:", error);
+
+            console.error(
+                "Document download failed:",
+                error
+            );
+
+            alert(
+                "Failed to download document."
+            );
         }
     };
     return (
@@ -240,8 +270,12 @@ function RequestDetails() {
 
                                         <button
                                             key={doc.id}
-                                            onClick={() => downloadDocument(doc.id)}
-                                            className="document-card"
+                                            onClick={() =>
+                                                downloadDocument(
+                                                    doc.id,
+                                                    doc.fileName
+                                                )
+                                            }                                            className="document-card"
                                         >
                                             <div className="document-info">
         <span className="document-icon">
@@ -287,8 +321,12 @@ function RequestDetails() {
 
                                                     <button
                                                         key={doc.id}
-                                                        onClick={() => downloadDocument(doc.id)}
-                                                        className="result-document-card"
+                                                        onClick={() =>
+                                                            downloadDocument(
+                                                                doc.id,
+                                                                doc.fileName
+                                                            )
+                                                        }                                                        className="result-document-card"
                                                     >
                                                         <div className="document-info">
         <span className="document-icon">

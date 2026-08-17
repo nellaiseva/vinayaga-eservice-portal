@@ -108,4 +108,28 @@ public class RealFileUploadService {
         document.setResultDocument(isResult);
         return documentRepository.save(document);
     }
+    public UploadedDocument getDocument(Long documentId) {
+
+        return documentRepository.findById(documentId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Document not found."
+                        )
+                );
+    }
+
+    public byte[] downloadDocument(Long documentId) {
+
+        UploadedDocument document =
+                documentRepository.findById(documentId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Document not found."
+                                )
+                        );
+
+        return storageService.download(
+                document.getFilePath()
+        );
+    }
 }

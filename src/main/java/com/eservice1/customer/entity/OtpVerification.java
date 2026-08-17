@@ -14,6 +14,10 @@ public class OtpVerification {
     @Column(nullable = false)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OtpPurpose purpose;
+
     @Column(nullable = false)
     private String otp;
 
@@ -46,6 +50,14 @@ public class OtpVerification {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public OtpPurpose getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(OtpPurpose purpose) {
+        this.purpose = purpose;
     }
 
     public String getOtp() {
