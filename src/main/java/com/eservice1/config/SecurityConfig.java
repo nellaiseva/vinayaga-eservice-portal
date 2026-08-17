@@ -34,7 +34,10 @@ public class SecurityConfig {
             "/service-categories/active",
             "/customer-form-fields/**",
             "/service-form-fields/**",
-            "/feedback/**"
+            "/feedback/**",
+            "/employee/forgot-password/send-otp",
+            "/employee/forgot-password/verify-otp",
+            "/employee/forgot-password/reset",
     };
 
     private final JwtFilter jwtFilter;
@@ -141,7 +144,11 @@ public class SecurityConfig {
                                 "OWNER",
                                 "EMPLOYEE"
                         )
-
+                        .requestMatchers(
+                                "/employee/forgot-password/send-otp",
+                                "/employee/forgot-password/verify-otp",
+                                "/employee/forgot-password/reset"
+                        ).permitAll()
                         .requestMatchers("/health").permitAll()
                         .requestMatchers("/service-categories/**")
                         .hasAuthority("OWNER")

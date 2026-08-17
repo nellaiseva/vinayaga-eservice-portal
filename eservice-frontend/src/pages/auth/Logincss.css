@@ -872,3 +872,15 @@ REDUCE MOTION
     }
 
 }
+.forgot-password-link {
+    margin-top: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
