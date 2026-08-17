@@ -7,7 +7,7 @@ import DashboardLayout
     from "../../layouts/DashboardLayout";
 import Pagination from "../../components/Pagination";
 import "./Services.css";
-
+import LoadingScreen from "../../components/LoadingScreen";
 function Services() {
 
     const [services, setServices] = useState([]);
@@ -17,31 +17,40 @@ function Services() {
     const [size, setSize] = useState(10);
 
     const [totalPages, setTotalPages] = useState(0);
-
+    const [loading, setLoading] = useState(false);
     const [totalElements, setTotalElements] = useState(0);
     const loadServices = async () => {
 
-        const token = localStorage.getItem("token");
+        setLoading(true);
 
-        const response = await axios.get(
+        try {
 
-            (`${API_URL}/admin/services?page=${page}&size=${size}`),
+            const token = localStorage.getItem("token");
 
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
+            const response = await axios.get(
+                `${API_URL}/admin/services?page=${page}&size=${size}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 }
-            }
+            );
 
-        );
-        console.log(response.data);
+            console.log(response.data);
 
-        setServices(response.data.content);
+            setServices(response.data.content);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
 
-        setTotalPages(response.data.totalPages);
+        } catch (error) {
 
-        setTotalElements(response.data.totalElements);
+            console.error(error);
 
+        } finally {
+
+            setLoading(false);
+
+        }
     };
     useEffect(() => {
 
@@ -90,6 +99,9 @@ function Services() {
         }
 
     };
+    if (loading) {
+        return <LoadingScreen message="Loading services..." />;
+    }
     return (
         <DashboardLayout>
 

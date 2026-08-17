@@ -7,7 +7,7 @@ import {
     getActiveCategories
 } from "../../services/serviceCategoryService";
 import "./CustomerService.css";
-
+import LoadingScreen from "../../components/LoadingScreen";
 import Pagination from "../../components/Pagination";
 
 function CustomerServices() {
@@ -44,51 +44,47 @@ function CustomerServices() {
     }, [searchTerm]);
     const loadData = async () => {
 
+        setLoading(true);
+
         try {
 
             const params = new URLSearchParams();
 
             params.append("page", page);
-
             params.append("size", size);
 
             if (debouncedSearch.trim()) {
-
                 params.append(
-
                     "search",
-
                     debouncedSearch.trim()
-
                 );
-
             }
 
             const serviceResponse =
-
                 await axios.get(
-
                     `${API_URL}/services?${params.toString()}`
-
                 );
+
             console.log(serviceResponse.data);
+
             setServices(serviceResponse.data.content);
-
             setTotalPages(serviceResponse.data.totalPages);
+            setTotalElements(serviceResponse.data.totalElements);
 
-            setTotalElements(serviceResponse.data.totalElements);            const categoryResponse =
+            const categoryResponse =
                 await getActiveCategories();
 
             setCategories(categoryResponse.data);
 
-        }
-
-        catch (e) {
+        } catch (e) {
 
             console.error(e);
 
-        }
+        } finally {
 
+            setLoading(false);
+
+        }
     };
     useEffect(() => {
 
@@ -104,16 +100,7 @@ function CustomerServices() {
 
     ]);
     if (loading) {
-
-        return (
-            <>
-                <CustomerNavbar />
-                <div className="services-loading">
-                    Loading...
-                </div>
-            </>
-        );
-
+        return <LoadingScreen message="Loading services..." />;
     }
 
     return (

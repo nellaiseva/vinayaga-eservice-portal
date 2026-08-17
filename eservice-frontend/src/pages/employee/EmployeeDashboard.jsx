@@ -6,7 +6,7 @@ import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";import { API_URL } from "../../config";
 import "./EmployeeDashboard.css"
 
-
+import LoadingScreen from "../../components/LoadingScreen";
 function EmployeeDashboard() {
     const [tasks, setTasks] = useState([]);
    // const [documents, setDocuments] = useState({});
@@ -440,6 +440,9 @@ Thank you.`;
         void loadStats();
 
     }, []);
+    if (loading) {
+        return <LoadingScreen message="Loading dashboard..." />;
+    }
     return (
         <>
             <Navbar />

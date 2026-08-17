@@ -3,6 +3,8 @@ import {
     Routes,
     Route
 } from "react-router-dom";
+import Forbidden from "./pages/Forbidden/Forbidden";
+import Unauthorized from "./pages/Unauthorized/Unauthorized";
 import CreateEmployee
     from "./pages/owner/CreateEmployee";
 import Login from "./pages/auth/Login";
@@ -59,6 +61,7 @@ import EmployeeProfileEdit
     from "./pages/employee/EmployeeProfileEdit";
 import ServiceCategories
     from "./pages/owner/ServiceCategories";
+import NotFound from "./pages/NotFound/NotFound";
 function AnimatedRoutes() {
 
     const location =
@@ -88,65 +91,67 @@ function AnimatedRoutes() {
                     />
 
 
-                    <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute>
-                                <Dashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
 
-                    <Route
-                        path="/services"
-                        element={
-                            <ProtectedRoute>
-                                <Services />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/services"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <Services />
+                        </ProtectedRoute>
+                    }
+                />
 
-                    <Route
-                        path="/services/create"
-                        element={
-                            <ProtectedRoute>
-                                <CreateService />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/services/edit/:id"
-                        element={
-                            <ProtectedRoute>
-                                <EditService />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/services/create"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <CreateService />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/services/edit/:id"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <EditService />
+                        </ProtectedRoute>
+                    }
+                />
 
                     <Route
                         path="/requests/create"
                         element={
-                            <ProtectedRoute>
+                            <CustomerProtectedRoute>
                                 <CreateRequest />
-                            </ProtectedRoute>
+                            </CustomerProtectedRoute>
                         }
                     />
-                    <Route
-                        path="/requests"
-                        element={
-                            <ProtectedRoute>
-                                <Requests />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/employee-dashboard"
-                        element={
-                            <ProtectedRoute>
-                                <EmployeeDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/requests"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <Requests />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/employee-dashboard"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["EMPLOYEE", "OWNER"]}
+                        >
+                            <EmployeeDashboard />
+                        </ProtectedRoute>
+                    }
+                />
                     <Route
                         path="/my-requests"
                         element={
@@ -155,28 +160,24 @@ function AnimatedRoutes() {
                             </CustomerProtectedRoute>
                         }
                     />
-                    <Route
-                        path="/employees"
-                        element={
-                            <ProtectedRoute>
-                                <Employees />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/employees"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <Employees />
+                        </ProtectedRoute>
+                    }
+                />
 
-                    <Route
-                        path="/users"
-                        element={
-                            <ProtectedRoute>
-                                <Users />
-                            </ProtectedRoute>
-                        }
-                    />
+                <Route
+                    path="/users"
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <Users />
+                        </ProtectedRoute>
+                    }
+                />
 
-                    <Route
-                        path="*"
-                        element={<Login />}
-                    />
 
                     <Route
                         path="/service-documents/:id"
@@ -230,19 +231,36 @@ function AnimatedRoutes() {
                     />
                 <Route
                     path="/service-fields/:serviceId"
-                    element={<ServiceFieldManager />}
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <ServiceFieldManager />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/request-details/:id"
-                    element={<RequestDetails />}
-                /><Route
-                path="/employee-requests"
-                element={<EmployeeRequests />}
-            />
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["CUSTOMER", "EMPLOYEE", "OWNER"]}
+                        >
+                            <RequestDetails />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/employee-requests"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["EMPLOYEE", "OWNER"]}
+                        >
+                            <EmployeeRequests />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/employees/:id"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
                             <EmployeePerformance />
                         </ProtectedRoute>
                     }
@@ -250,7 +268,7 @@ function AnimatedRoutes() {
                 <Route
                     path="/employee/profile"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["EMPLOYEE", "OWNER"]}>
                             <EmployeeProfile />
                         </ProtectedRoute>
                     }
@@ -258,7 +276,7 @@ function AnimatedRoutes() {
                 <Route
                     path="/employee/profile/edit"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["EMPLOYEE", "OWNER"]}>
                             <EmployeeProfileEdit />
                         </ProtectedRoute>
                     }
@@ -267,14 +285,32 @@ function AnimatedRoutes() {
 
                     path="/service-categories"
                     element={
-                        <ProtectedRoute>
-                            <ServiceCategories/>
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <ServiceCategories />
                         </ProtectedRoute>
                     }
                 />
                 <Route
                     path="/employees/create"
-                    element={<CreateEmployee />}
+                    element={
+                        <ProtectedRoute allowedRoles={["OWNER"]}>
+                            <CreateEmployee />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/401"
+                    element={<Unauthorized />}
+                />
+
+                <Route
+                    path="/403"
+                    element={<Forbidden />}
+                />
+
+                <Route
+                    path="*"
+                    element={<NotFound />}
                 />
             </Routes>
 

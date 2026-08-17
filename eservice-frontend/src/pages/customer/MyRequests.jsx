@@ -5,7 +5,7 @@ import {Link} from "react-router-dom";
 import { API_URL } from "../../config";
 import Pagination from "../../components/Pagination";
 import "./Myrequest.css";
-
+import LoadingScreen from "../../components/LoadingScreen";
 function MyRequests() {
 
     const [requests, setRequests] = useState([]);
@@ -171,23 +171,7 @@ function MyRequests() {
 
     };
     if (loading) {
-
-        return (
-
-            <>
-
-                <CustomerNavbar/>
-
-                <div className="services-loading">
-
-                    Loading...
-
-                </div>
-
-            </>
-
-        );
-
+        return <LoadingScreen message="Loading your requests..." />;
     }
     return (
         <>

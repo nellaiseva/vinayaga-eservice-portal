@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../../config";
 import "./RequestDetails.css";
-
+import LoadingScreen from "../../components/LoadingScreen";
 function RequestDetails() {
 
     const { id } = useParams();
@@ -12,7 +12,7 @@ function RequestDetails() {
         setRequest] =
         useState(null);
 
-
+    const [loading, setLoading] = useState(false);
     const [documents, setDocuments] =
         useState([]);
     const customerDocuments = (documents || []).filter(
@@ -31,54 +31,84 @@ function RequestDetails() {
         const token =
             localStorage.getItem("token");
 
-        axios.get(
-            `${API_URL}/requests/${id}`,
-            {
-                headers: {
-                    Authorization:
-                        `Bearer ${token}`
-                }
-            }
-        )
-            .then(res => {
-                setRequest(res.data);
-            });
+        const loadData = async () => {
 
-        axios.get(
-            `${API_URL}/service-form-responses/request/${id}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        )
-            .then(res => {
-                setFormResponses(res.data);
-            });
-        Promise.all([
-            axios.get(`${API_URL}/documents/request/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }),
-            axios.get(`${API_URL}/documents/request/${id}/results`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-        ])
-            .then(([customerRes, resultRes]) => {
+            try {
+
+                setLoading(true);
+
+                const [
+                    requestRes,
+                    formResponse,
+                    customerRes,
+                    resultRes
+                ] = await Promise.all([
+
+                    axios.get(
+                        `${API_URL}/requests/${id}`,
+                        {
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    ),
+
+                    axios.get(
+                        `${API_URL}/service-form-responses/request/${id}`,
+                        {
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    ),
+
+                    axios.get(
+                        `${API_URL}/documents/request/${id}`,
+                        {
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    ),
+
+                    axios.get(
+                        `${API_URL}/documents/request/${id}/results`,
+                        {
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                ]);
+
+                setRequest(requestRes.data);
+                setFormResponses(formResponse.data);
 
                 setDocuments([
                     ...customerRes.data,
                     ...resultRes.data
                 ]);
 
-            });
+            } catch (error) {
+
+                console.error(error);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        loadData();
 
     }, [id]);
-
-    if (!request) {
-
-        return <h3>Loading...</h3>;
-
-    }
     console.log("All documents:", documents);
     console.log("Customer docs:", customerDocuments);
     console.log("Result docs:", resultDocuments);
@@ -140,6 +170,9 @@ function RequestDetails() {
             );
         }
     };
+    if (loading) {
+        return <LoadingScreen message="Loading request details..." />;
+    }
     return (
 
         <div className="page-bg">
