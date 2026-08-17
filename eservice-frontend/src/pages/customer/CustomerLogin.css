@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
 .customer-login-page{
 
     min-height:100vh;
@@ -209,7 +210,12 @@
             0 15px 35px rgba(37,99,235,.12);
 }
 
-.otp-input{
-
+.otp-input {
     margin-top:15px;
+    font-family:"Poppins", sans-serif;
+    font-size:16px;
+}
+.customer-login-page,
+.customer-login-page * {
+    font-family:"Poppins", sans-serif;
 }

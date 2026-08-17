@@ -99,7 +99,7 @@ function CustomerProfile() {
                     <div className="verified-box">
 
                         <div className="verified-text">
-                            ✅ Mobile Verified
+                             Mobile Verified
                         </div>
 
                         <div>

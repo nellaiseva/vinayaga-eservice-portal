@@ -1,7 +1,7 @@
 /*==========================================================
 RESET
 ==========================================================*/
-
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
 *{
     margin:0;
     padding:0;
@@ -17,12 +17,14 @@ body,
 
     overflow-x:hidden;
 
-    font-family:
-            "Georgia",
-            serif;
-
+    font-family:"Poppins", sans-serif;
 }
-
+button,
+input,
+textarea,
+select{
+    font-family:inherit;
+}
 /*==========================================================
 PAGE
 ==========================================================*/
