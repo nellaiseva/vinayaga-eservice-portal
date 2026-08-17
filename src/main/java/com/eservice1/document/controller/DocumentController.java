@@ -120,36 +120,5 @@ public class DocumentController {
                 );
 
     }
-    @GetMapping("/download/{documentId}")
-    public ResponseEntity<byte[]> downloadDocument(
 
-            @PathVariable Long documentId,
-
-            Authentication authentication
-
-    ) {
-
-        UploadedDocument document =
-                uploadService.getDocument(documentId);
-
-        Long requestId =
-                document.getRequest().getId();
-
-        requestAccessService.requireRequestAccess(
-                requestId,
-                authentication
-        );
-
-        byte[] fileBytes =
-                uploadService.downloadDocument(documentId);
-
-        return ResponseEntity.ok()
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" +
-                                document.getFileName() +
-                                "\""
-                )
-                .body(fileBytes);
-    }
 }
