@@ -238,35 +238,27 @@ function RequestDetails() {
 
                                     {customerDocuments.map(doc => (
 
-                                        <a
+                                        <button
                                             key={doc.id}
-                                            href={`${API_URL}/documents/download/${doc.id}`}                                            target="_blank"
-                                            rel="noreferrer"
+                                            onClick={() => downloadDocument(doc.id)}
                                             className="document-card"
                                         >
-
                                             <div className="document-info">
-
-                    <span className="document-icon">
-                        📄
-                    </span>
+        <span className="document-icon">
+            📄
+        </span>
 
                                                 <span className="document-name">
-
-                        {doc.documentName.length > 25
-                            ? doc.documentName.substring(0, 25) + "..."
-                            : doc.documentName}
-
-                    </span>
-
+            {doc.documentName.length > 25
+                ? doc.documentName.substring(0, 25) + "..."
+                : doc.documentName}
+        </span>
                                             </div>
 
                                             <span className="download-icon">
-                    ⬇
-                </span>
-
-                                        </a>
-
+        ⬇
+    </span>
+                                        </button>
                                     ))}
 
                                 </div>
@@ -293,37 +285,25 @@ function RequestDetails() {
 
                                                 resultDocuments.map(doc => (
 
-                                                    <a
+                                                    <button
                                                         key={doc.id}
-                                                        href={`${API_URL}/documents/download/${doc.id}`}                                                        target="_blank"
-                                                        rel="noreferrer"
+                                                        onClick={() => downloadDocument(doc.id)}
                                                         className="result-document-card"
                                                     >
-
                                                         <div className="document-info">
-
-                                                        <span className="document-icon">
-
-                                                            📜
-
-                                                        </span>
+        <span className="document-icon">
+            📜
+        </span>
 
                                                             <span className="document-name">
-
-                                                            {doc.documentName}
-
-                                                        </span>
-
+            {doc.documentName}
+        </span>
                                                         </div>
 
                                                         <span className="download-icon">
-
-                                                        ⬇
-
-                                                    </span>
-
-                                                    </a>
-
+        ⬇
+    </span>
+                                                    </button>
                                                 ))
 
                                             }

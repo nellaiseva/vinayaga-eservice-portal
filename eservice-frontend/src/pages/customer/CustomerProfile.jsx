@@ -138,13 +138,14 @@ function CustomerProfile() {
                         <input
                             type="date"
                             className="profile-input"
-                        value={dob}
-                        onChange={(e) =>
-                            setDob(
-                                e.target.value
-                            )
-                        }
-                    />
+                            value={dob}
+                            max={new Date(Date.now() - 86400000)
+                                .toISOString()
+                                .split("T")[0]}
+                            onChange={(e) =>
+                                setDob(e.target.value)
+                            }
+                        />
                     </div>
                     <button
                         className="save-profile-btn"
