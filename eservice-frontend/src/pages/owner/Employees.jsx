@@ -79,7 +79,7 @@ function Employees() {
         employees.filter(employee => {
 
             const matchesName =
-                employee.name
+                (employee.name || "")
                     .toLowerCase()
                     .includes(
                         searchName
@@ -87,7 +87,7 @@ function Employees() {
                     );
 
             const matchesPhone =
-                employee.phoneNumber
+                (employee.phoneNumber || "")
                     .includes(
                         searchPhone
                     );
