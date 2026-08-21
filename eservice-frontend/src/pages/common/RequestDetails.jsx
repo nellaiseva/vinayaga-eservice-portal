@@ -12,7 +12,8 @@ function RequestDetails() {
         setRequest] =
         useState(null);
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+
     const [documents, setDocuments] =
         useState([]);
     const customerDocuments = (documents || []).filter(
@@ -173,6 +174,24 @@ function RequestDetails() {
     if (loading) {
         return <LoadingScreen message="Loading request details..." />;
     }
+
+    if (!request) {
+        return (
+            <div className="page-bg">
+                <div className="request-details-page">
+                    <div className="request-details-container">
+                        <div className="glass-card">
+                            <h2>Request Not Found</h2>
+                            <p>
+                                The requested application could not be found.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
 
         <div className="page-bg">
