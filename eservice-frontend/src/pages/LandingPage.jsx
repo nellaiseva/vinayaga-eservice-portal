@@ -76,7 +76,7 @@ function LandingPage() {
                             {/* BADGE */}
 
                             <span className="hero-badge">
-                                Vinayaga E-Service Portal
+                                Nellai E-Seva Portal
                             </span>
 
 
