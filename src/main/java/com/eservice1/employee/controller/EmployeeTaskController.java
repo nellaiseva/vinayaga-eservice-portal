@@ -56,7 +56,8 @@ public class EmployeeTaskController {
             String phone,
 
             @RequestParam(required = false)
-            String status
+            String status,
+            Authentication authentication
 
     ) {
 
@@ -72,7 +73,8 @@ public class EmployeeTaskController {
 
                 phone,
 
-                status
+                status,
+                authentication
 
         );
 
@@ -80,26 +82,30 @@ public class EmployeeTaskController {
 
     @PostMapping("/{taskId}/accept")
     public Task acceptTask(
-            @PathVariable Long taskId) {
+            @PathVariable Long taskId,
+            Authentication authentication) {
 
-        return taskService.acceptTask(taskId);
+        return taskService.acceptTask(taskId, authentication);
     }
 
     @PostMapping("/{taskId}/complete")
     public Task completeTask(
-            @PathVariable Long taskId) {
+            @PathVariable Long taskId,
+            Authentication authentication) {
 
-        return taskService.completeTask(taskId);
+        return taskService.completeTask(taskId, authentication);
     }
 
     @PostMapping("/{taskId}/priority")
     public Task updatePriority(
             @PathVariable Long taskId,
-            @RequestParam Priority priority) {
+            @RequestParam Priority priority,
+            Authentication authentication) {
 
         return taskService.updatePriority(
                 taskId,
-                priority
+                priority,
+                authentication
         );
     }
 
@@ -134,12 +140,14 @@ public class EmployeeTaskController {
             MultipartFile file,
 
             @RequestParam("taskId")
-            Long taskId)
+            Long taskId,
+            Authentication authentication)
             throws Exception {
 
         taskService.uploadResult(
                 taskId,
-                file
+                file,
+                authentication
         );
 
         return "Result uploaded successfully.";    }

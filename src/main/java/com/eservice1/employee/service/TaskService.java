@@ -23,7 +23,13 @@ import com.eservice1.common.util.PaginationMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;import com.eservice1.common.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Sort;
+import com.eservice1.common.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Objects;
+
 @Service
 public class TaskService {
 
@@ -31,6 +37,23 @@ public class TaskService {
     private final EmployeeRepository employeeRepository;
     private final CustomerRequestRepository requestRepository;
     private final UploadedDocumentRepository uploadedDocumentRepository;
+
+    private void requireTaskOperateAccess(Task task, Authentication authentication) {
+        if (authentication == null) {
+            throw new AccessDeniedException("You are not authorized to operate on this task.");
+        }
+        boolean isOwner = authentication.getAuthorities().stream()
+                .anyMatch(a -> "OWNER".equals(a.getAuthority()));
+        if (isOwner) {
+            return;
+        }
+        Employee employee = employeeRepository.findByPhoneNumber(authentication.getName());
+        if (employee == null
+                || task.getEmployee() == null
+                || !Objects.equals(task.getEmployee().getId(), employee.getId())) {
+            throw new AccessDeniedException("You are not authorized to operate on this task.");
+        }
+    }
     public Task selfAssign(
             Long requestId,
             String phoneNumber) {
@@ -109,6 +132,45 @@ public class TaskService {
             String status
 
     ) {
+        return getTasks(
+                employeeId,
+                page,
+                size,
+                search,
+                phone,
+                status,
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+    }
+
+    public PageResponseDTO<Task> getTasks(
+
+            Long employeeId,
+
+            int page,
+
+            int size,
+
+            String search,
+
+            String phone,
+
+            String status,
+            Authentication authentication
+
+    ) {
+
+        if (authentication == null) {
+            throw new AccessDeniedException("You are not authorized to access these tasks.");
+        }
+        boolean isOwner = authentication.getAuthorities().stream()
+                .anyMatch(a -> "OWNER".equals(a.getAuthority()));
+        if (!isOwner) {
+            Employee employee = employeeRepository.findByPhoneNumber(authentication.getName());
+            if (employee == null || !Objects.equals(employeeId, employee.getId())) {
+                throw new AccessDeniedException("You are not authorized to view tasks for this employee.");
+            }
+        }
 
         search = (search == null) ? "" : search.trim();
         phone  = (phone == null) ? "" : phone.trim();
@@ -181,9 +243,31 @@ public class TaskService {
     }
     public List<Task> getTasks(Long employeeId) {
 
+        return getTasks(employeeId, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    public List<Task> getTasks(Long employeeId, Authentication authentication) {
+
+        if (authentication == null) {
+            throw new AccessDeniedException("You are not authorized to access these tasks.");
+        }
+        boolean isOwner = authentication.getAuthorities().stream()
+                .anyMatch(a -> "OWNER".equals(a.getAuthority()));
+        if (!isOwner) {
+            Employee employee = employeeRepository.findByPhoneNumber(authentication.getName());
+            if (employee == null || !Objects.equals(employeeId, employee.getId())) {
+                throw new AccessDeniedException("You are not authorized to view tasks for this employee.");
+            }
+        }
+
         return taskRepository.findByEmployeeId(employeeId);
     }
     public Task acceptTask(Long taskId) {
+
+        return acceptTask(taskId, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    public Task acceptTask(Long taskId, Authentication authentication) {
 
         Task task =
                 taskRepository.findById(taskId)
@@ -192,6 +276,8 @@ public class TaskService {
                                         "Task not found."
                                 )
                         );
+
+        requireTaskOperateAccess(task, authentication);
 
         task.setStatus(
                 TaskStatus.IN_PROGRESS
@@ -213,6 +299,14 @@ public class TaskService {
             Long taskId,
             Priority priority) {
 
+        return updatePriority(taskId, priority, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    public Task updatePriority(
+            Long taskId,
+            Priority priority,
+            Authentication authentication) {
+
         Task task =
                 taskRepository.findById(taskId)
                         .orElseThrow(() ->
@@ -220,6 +314,8 @@ public class TaskService {
                                         "Task not found."
                                 )
                         );
+
+        requireTaskOperateAccess(task, authentication);
 
         task.setPriority(priority);
 
@@ -273,6 +369,11 @@ public class TaskService {
     }
     public Task completeTask(Long taskId) {
 
+        return completeTask(taskId, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    public Task completeTask(Long taskId, Authentication authentication) {
+
         Task task =
                 taskRepository.findById(taskId)
                         .orElseThrow(() ->
@@ -280,6 +381,8 @@ public class TaskService {
                                         "Task not found."
                                 )
                         );
+
+        requireTaskOperateAccess(task, authentication);
 
         task.setStatus(
                 TaskStatus.COMPLETED
@@ -296,10 +399,79 @@ public class TaskService {
 
         return taskRepository.save(task);
     }
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+            "pdf", "jpg", "jpeg", "png", "doc", "docx"
+    );
+
+    private static final java.util.Set<String> ALLOWED_MIME_TYPES = java.util.Set.of(
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    private static final long MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+
     public void uploadResult(
             Long taskId,
             MultipartFile file)
             throws IOException {
+        uploadResultInternal(taskId, file, null, false);
+    }
+
+    public void uploadResult(
+            Long taskId,
+            MultipartFile file,
+            Authentication authentication)
+            throws IOException {
+        uploadResultInternal(taskId, file, authentication, true);
+    }
+
+    private void uploadResultInternal(
+            Long taskId,
+            MultipartFile file,
+            Authentication authentication,
+            boolean requireAuth)
+            throws IOException {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Upload file cannot be null or empty.");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds maximum allowed limit of 20MB.");
+        }
+
+        // Validate MIME type
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.isBlank()) {
+            if (!ALLOWED_MIME_TYPES.contains(contentType.toLowerCase().trim())) {
+                throw new IllegalArgumentException("File MIME type not allowed: " + contentType);
+            }
+        }
+
+        // Extract and validate extension from original filename
+        String rawOriginalFilename = file.getOriginalFilename();
+        if (rawOriginalFilename == null || rawOriginalFilename.isBlank()) {
+            throw new IllegalArgumentException("Invalid file name.");
+        }
+
+        // Strip any path traversal sequences from original filename
+        String simpleName = new File(rawOriginalFilename).getName();
+        if (rawOriginalFilename.contains("..") || rawOriginalFilename.contains("/") || rawOriginalFilename.contains("\\")) {
+            throw new IllegalArgumentException("Malicious path sequence detected in filename.");
+        }
+
+        int dotIndex = simpleName.lastIndexOf('.');
+        if (dotIndex == -1) {
+            throw new IllegalArgumentException("File must have a valid extension.");
+        }
+
+        String extension = simpleName.substring(dotIndex + 1).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("File extension not allowed: ." + extension);
+        }
 
         Task task =
                 taskRepository.findById(
@@ -310,44 +482,42 @@ public class TaskService {
                         )
                 );
 
-        String uploadDir =
-                System.getProperty("user.dir")
-                        + File.separator
-                        + "uploads"
-                        + File.separator;
-
-        File dir =
-                new File(uploadDir);
-
-        if (!dir.exists()) {
-
-            dir.mkdirs();
+        if (requireAuth) {
+            requireTaskOperateAccess(task, authentication);
         }
 
-        String filePath =
-                uploadDir +
-                        "RESULT_" +
-                        file.getOriginalFilename();
+        // Safe storage directory
+        File baseDir = new File(System.getProperty("user.dir"), "uploads").getCanonicalFile();
+        if (!baseDir.exists()) {
+            baseDir.mkdirs();
+        }
 
-        file.transferTo(
-                new File(filePath)
-        );
+        // Generate safe unique storage name (never uses user-controlled string directly as path)
+        String safeStorageFileName = "RESULT_" + java.util.UUID.randomUUID().toString() + "." + extension;
+        File destinationFile = new File(baseDir, safeStorageFileName).getCanonicalFile();
+
+        // Canonical path traversal guard
+        if (!destinationFile.getParentFile().equals(baseDir)) {
+            throw new SecurityException("Potential path traversal detected.");
+        }
+
+        file.transferTo(destinationFile);
+
+        String safeDisplayName = "RESULT_" + simpleName.replaceAll("[^a-zA-Z0-9._-]", "_");
 
         UploadedDocument document =
                 new UploadedDocument();
 
         document.setDocumentName(
-                "RESULT_" +
-                        file.getOriginalFilename()
+                safeDisplayName
         );
 
         document.setFileName(
-                "RESULT_" +
-                        file.getOriginalFilename()
+                safeStorageFileName
         );
 
         document.setFilePath(
-                filePath
+                destinationFile.getAbsolutePath()
         );
 
         document.setRequest(

@@ -12,12 +12,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     /**
@@ -27,14 +30,10 @@ public class SecurityConfig {
     public static final String[] PUBLIC_URL_PATTERNS = {
             "/auth/login",
             "/auth/owner",
-            "/admin/requests/test",
             "/login",
             "/customer-login",
             "/services/**",
             "/service-categories/active",
-            "/customer-form-fields/**",
-            "/service-form-fields/**",
-            "/feedback/**",
             "/employee/forgot-password/send-otp",
             "/employee/forgot-password/verify-otp",
             "/employee/forgot-password/reset",
@@ -77,6 +76,16 @@ public class SecurityConfig {
 
                         .requestMatchers(PUBLIC_URL_PATTERNS).permitAll()
 
+                        // SEC-CRIT-02: Public READ for form fields, OWNER only for mutating operations
+                        .requestMatchers(HttpMethod.GET, "/customer-form-fields", "/customer-form-fields/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/service-form-fields", "/service-form-fields/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/customer-form-fields", "/customer-form-fields/**").hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.PUT, "/customer-form-fields", "/customer-form-fields/**").hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/customer-form-fields", "/customer-form-fields/**").hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/service-form-fields", "/service-form-fields/**").hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.PUT, "/service-form-fields", "/service-form-fields/**").hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/service-form-fields", "/service-form-fields/**").hasAuthority("OWNER")
+
                         .requestMatchers("/auth/register")
                         .hasAuthority("OWNER")
 
@@ -107,24 +116,16 @@ public class SecurityConfig {
                         .requestMatchers("/receipts/**")
                         .hasAnyAuthority("EMPLOYEE", "OWNER")
 
-                        //.requestMatchers(
-                        //    HttpMethod.GET,
-                        //    "/customer-form-fields/active"
-                        //).hasAnyRole(
-                        //    "CUSTOMER",
-                        //    "EMPLOYEE",
-                        //    "OWNER"
-                        //).requestMatchers("/admin/**")
-                        //.hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/feedback")
+                        .hasAuthority("CUSTOMER")
+                        .requestMatchers("/feedback/**")
+                        .hasAuthority("CUSTOMER")
 
-                        //.requestMatchers("/employees/**")
-                        //.hasAuthority("OWNER")
+                        .requestMatchers("/dashboard", "/dashboard/**")
+                        .hasAuthority("OWNER")
 
                         .requestMatchers("/admin/**")
-                        .hasAnyAuthority(
-                                "OWNER",
-                                "EMPLOYEE"
-                        )
+                        .hasAuthority("OWNER")
                         .requestMatchers("/users/**")
                         .hasAuthority("OWNER")
 
@@ -133,11 +134,24 @@ public class SecurityConfig {
 
                         .requestMatchers("/employees/dashboard")
                         .hasAuthority("OWNER")
+
+                        .requestMatchers(HttpMethod.POST, "/employees")
+                        .hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/employees/promote/**")
+                        .hasAuthority("OWNER")
+
                         .requestMatchers("/employees/**")
                         .hasAnyAuthority(
                                 "OWNER",
                                 "EMPLOYEE"
                         )
+
+                        .requestMatchers(HttpMethod.POST, "/employee/tasks/*/assign/*")
+                        .hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/employee/tasks")
+                        .hasAuthority("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/employee/tasks")
+                        .hasAuthority("OWNER")
 
                         .requestMatchers("/employee/**")
                         .hasAnyAuthority(

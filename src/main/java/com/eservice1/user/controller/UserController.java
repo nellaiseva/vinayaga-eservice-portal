@@ -1,6 +1,6 @@
 package com.eservice1.user.controller;
 
-import com.eservice1.user.entity.User;
+import com.eservice1.user.dto.UserResponse;
 import com.eservice1.user.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,8 +21,11 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
 
-        return userRepository.findAll();
+        return userRepository.findAll()
+                .stream()
+                .map(UserResponse::fromEntity)
+                .toList();
     }
 }

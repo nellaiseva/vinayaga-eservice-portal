@@ -18,7 +18,7 @@ public class OtpVerification {
     @Column(nullable = false)
     private OtpPurpose purpose;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String otp;
 
     @Column(nullable = false)

@@ -13,13 +13,15 @@ import com.eservice1.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class OtpService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final OtpVerificationRepository repository;
     private final JwtService jwtService;
@@ -50,6 +52,19 @@ public class OtpService {
 
         String phoneNumber =
                 request.getPhoneNumber();
+
+        // Prevent staff accounts from receiving/using customer OTPs
+        Optional<User> existingUser = userRepository.findByPhoneNumber(phoneNumber);
+        if (existingUser.isPresent()) {
+            Role role = existingUser.get().getRole();
+            if (role == Role.OWNER || role == Role.EMPLOYEE) {
+                return new OtpResponse(
+                        false,
+                        "Staff accounts must log in using password at staff login.",
+                        null
+                );
+            }
+        }
 
         OtpPurpose purpose =
                 OtpPurpose.CUSTOMER_LOGIN;
@@ -110,11 +125,10 @@ public class OtpService {
             repository.delete(oldOtp);
         }
 
-        // Generate 6-digit OTP
+        // Generate 6-digit cryptographically secure OTP
         String otp =
                 String.valueOf(
-                        ThreadLocalRandom.current()
-                                .nextInt(100000, 1000000)
+                        100000 + SECURE_RANDOM.nextInt(900000)
                 );
 
         Instant createdAt =
@@ -129,7 +143,8 @@ public class OtpService {
                 OtpPurpose.CUSTOMER_LOGIN
         );
 
-        verification.setOtp(otp);
+        // Store hashed OTP in database
+        verification.setOtp(passwordEncoder.encode(otp));
 
         verification.setCreatedAt(
                 createdAt
@@ -203,6 +218,8 @@ public class OtpService {
         if (now.isAfter(
                 verification.getExpiresAt())) {
 
+            repository.delete(verification);
+
             return new OtpResponse(
                     false,
                     "OTP expired",
@@ -213,6 +230,8 @@ public class OtpService {
         // Maximum verification attempts
         if (verification.getAttempts() >= 5) {
 
+            repository.delete(verification);
+
             return new OtpResponse(
                     false,
                     "Maximum attempts exceeded",
@@ -220,9 +239,8 @@ public class OtpService {
             );
         }
 
-        // Check OTP
-        if (!verification.getOtp()
-                .equals(request.getOtp())) {
+        // Check OTP using BCrypt matching
+        if (!passwordEncoder.matches(request.getOtp(), verification.getOtp())) {
 
             verification.setAttempts(
                     verification.getAttempts() + 1
@@ -244,10 +262,24 @@ public class OtpService {
                 verification
         );
 
+        // Verify user role if already exists - staff accounts MUST NOT authenticate via customer OTP
+        Optional<User> existingUser =
+                userRepository.findByPhoneNumber(phoneNumber);
+
+        if (existingUser.isPresent()) {
+            Role role = existingUser.get().getRole();
+            if (role == Role.OWNER || role == Role.EMPLOYEE) {
+                return new OtpResponse(
+                        false,
+                        "Staff accounts must log in using password at staff login.",
+                        null
+                );
+            }
+        }
+
         // Find existing user or create customer
         User user =
-                userRepository
-                        .findByPhoneNumber(phoneNumber)
+                existingUser
                         .orElseGet(() -> {
 
                             User newUser =
@@ -268,7 +300,8 @@ public class OtpService {
 
         String token =
                 jwtService.generateToken(
-                        user.getPhoneNumber()
+                        user.getPhoneNumber(),
+                        Role.CUSTOMER
                 );
 
         return new OtpResponse(
@@ -364,11 +397,10 @@ public class OtpService {
             );
         }
 
-        // Generate 6-digit OTP
+        // Generate 6-digit cryptographically secure OTP
         String otp =
                 String.valueOf(
-                        ThreadLocalRandom.current()
-                                .nextInt(100000, 1000000)
+                        100000 + SECURE_RANDOM.nextInt(900000)
                 );
 
         Instant createdAt =
@@ -385,8 +417,9 @@ public class OtpService {
                 OtpPurpose.EMPLOYEE_PASSWORD_RESET
         );
 
+        // Store hashed OTP
         verification.setOtp(
-                otp
+                passwordEncoder.encode(otp)
         );
 
         verification.setCreatedAt(
@@ -461,6 +494,8 @@ public class OtpService {
         if (now.isAfter(
                 verification.getExpiresAt())) {
 
+            repository.delete(verification);
+
             return new OtpResponse(
                     false,
                     "OTP expired",
@@ -471,6 +506,8 @@ public class OtpService {
         // Maximum verification attempts
         if (verification.getAttempts() >= 5) {
 
+            repository.delete(verification);
+
             return new OtpResponse(
                     false,
                     "Maximum attempts exceeded",
@@ -478,9 +515,8 @@ public class OtpService {
             );
         }
 
-        // Check OTP
-        if (!verification.getOtp()
-                .equals(otp)) {
+        // Check OTP using BCrypt matching
+        if (!passwordEncoder.matches(otp, verification.getOtp())) {
 
             verification.setAttempts(
                     verification.getAttempts() + 1

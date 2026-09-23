@@ -4,10 +4,12 @@ import com.eservice1.admin.dto.DashboardStatsDTO;
 import com.eservice1.employee.repository.EmployeeRepository;
 import com.eservice1.submission.entity.RequestStatus;
 import com.eservice1.submission.repository.CustomerRequestRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/dashboard")
+@PreAuthorize("hasAuthority('OWNER')")
 public class AdminDashboardController {
 
     private final CustomerRequestRepository requestRepository;

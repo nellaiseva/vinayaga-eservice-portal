@@ -18,26 +18,38 @@ public class FeedbackService {
 
     private final CustomerRequestRepository requestRepository;
 
+    private final com.eservice1.submission.service.RequestAccessService requestAccessService;
+
     public FeedbackService(
             FeedbackRepository feedbackRepository,
-            CustomerRequestRepository requestRepository
+            CustomerRequestRepository requestRepository,
+            com.eservice1.submission.service.RequestAccessService requestAccessService
     ) {
 
         this.feedbackRepository = feedbackRepository;
         this.requestRepository = requestRepository;
+        this.requestAccessService = requestAccessService;
     }
 
     public Feedback submitFeedback(
             FeedbackDTO dto
     ) {
+        return submitFeedback(
+                dto,
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+        );
+    }
+
+    public Feedback submitFeedback(
+            FeedbackDTO dto,
+            org.springframework.security.core.Authentication authentication
+    ) {
 
         CustomerRequest request =
-                requestRepository.findById(dto.getRequestId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Request not found."
-                                )
-                        );
+                requestAccessService.requireCustomerRequestAccess(
+                        dto.getRequestId(),
+                        authentication
+                );
         if (feedbackRepository.existsByRequestId(request.getId())) {
 
             throw new DuplicateResourceException(

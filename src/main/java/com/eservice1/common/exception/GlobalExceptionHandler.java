@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.HashMap;
 import java.util.Map;
@@ -143,6 +144,30 @@ public class GlobalExceptionHandler {
                 .body(error);
 
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "A resource conflict occurred or unique constraint was violated."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(
 
@@ -164,6 +189,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(errors);
+
+    }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+
+            AccessDeniedException ex
+
+    ) {
+
+        ErrorResponse error = new ErrorResponse(
+
+                LocalDateTime.now(),
+
+                HttpStatus.FORBIDDEN.value(),
+
+                "Forbidden",
+
+                ex.getMessage()
+
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(error);
 
     }
     @ExceptionHandler(Exception.class)

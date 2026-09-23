@@ -5,10 +5,12 @@ import com.eservice1.service.service.PortalServiceService;
 import org.springframework.web.bind.annotation.*;
 import com.eservice1.service.dto.CreateServiceRequest;
 import jakarta.validation.Valid;
-import java.util.List;
 import com.eservice1.common.dto.PageResponseDTO;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/admin/services")
+@PreAuthorize("hasAuthority('OWNER')")
 public class AdminServiceController {
 
     private final PortalServiceService service;

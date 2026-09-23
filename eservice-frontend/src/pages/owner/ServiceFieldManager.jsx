@@ -36,11 +36,17 @@ function ServiceFieldManager() {
 
     }, []);
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem("token");
+        return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    };
+
     const loadFields = async () => {
 
         const response =
             await axios.get(
-                `${API_URL}/service-form-fields/service/${serviceId}`
+                `${API_URL}/service-form-fields/service/${serviceId}`,
+                getAuthHeaders()
             );
 
         setFields(
@@ -59,7 +65,8 @@ function ServiceFieldManager() {
                     fieldName,
                     fieldType,
                     requiredField
-                }
+                },
+                getAuthHeaders()
             );
 
         } else {
@@ -71,7 +78,8 @@ function ServiceFieldManager() {
                     fieldName,
                     fieldType,
                     requiredField
-                }
+                },
+                getAuthHeaders()
             );
         }
 
@@ -111,7 +119,8 @@ function ServiceFieldManager() {
         }
 
         await axios.delete(
-            `${API_URL}/service-form-fields/${id}`
+            `${API_URL}/service-form-fields/${id}`,
+            getAuthHeaders()
         );
 
         loadFields();

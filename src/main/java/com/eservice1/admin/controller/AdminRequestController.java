@@ -9,8 +9,11 @@ import com.eservice1.admin.service.AdminRequestService;
 import com.eservice1.common.dto.PageResponseDTO;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/admin/requests")
+@PreAuthorize("hasAuthority('OWNER')")
 public class AdminRequestController {
 
     private final AdminRequestService

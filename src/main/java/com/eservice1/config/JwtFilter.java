@@ -106,6 +106,12 @@ public class JwtFilter extends OncePerRequestFilter {
                 return;
             }
 
+            String tokenRole = jwtService.extractRole(token);
+            if (tokenRole != null && !tokenRole.equalsIgnoreCase(user.getRole().name())) {
+                sendUnauthorized(request, response);
+                return;
+            }
+
             UserDetails principal = new org.springframework.security.core.userdetails.User(
                     phoneNumber,
                     "",

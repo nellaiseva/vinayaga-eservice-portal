@@ -1,6 +1,7 @@
 package com.eservice1.user.controller;
 
 import com.eservice1.user.dto.LoginRequest;
+import com.eservice1.user.dto.UserResponse;
 import com.eservice1.user.entity.User;
 import com.eservice1.user.service.UserService;
 import jakarta.validation.Valid;
@@ -21,14 +22,15 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public User register(
+    public UserResponse register(
 
             @Valid
             @RequestBody RegisterRequest request
 
     ) {
 
-        return userService.register(request);
+        User user = userService.register(request);
+        return UserResponse.fromEntity(user);
 
     }
 
@@ -44,14 +46,16 @@ public class AuthController {
     }
 
     @PostMapping("/owner")
-    public User createOwner(
+    public UserResponse createOwner(
 
+            @RequestHeader(value = "X-Bootstrap-Token", required = false) String bootstrapToken,
             @Valid
             @RequestBody RegisterRequest request
 
     ) {
 
-        return userService.createOwner(request);
+        User owner = userService.createOwner(request, bootstrapToken);
+        return UserResponse.fromEntity(owner);
 
     }
 }

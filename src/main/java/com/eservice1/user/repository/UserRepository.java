@@ -11,4 +11,5 @@ public interface UserRepository
 
     Optional<User> findByPhoneNumber(String phoneNumber);
     boolean existsByRole(Role role);
+    long countByRole(Role role);
 }

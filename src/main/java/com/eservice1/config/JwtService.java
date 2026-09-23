@@ -29,17 +29,23 @@ public class JwtService {
 
     }
     public String generateToken(String phoneNumber) {
+        return generateToken(phoneNumber, null);
+    }
 
-        return Jwts.builder()
+    public String generateToken(String phoneNumber, com.eservice1.common.Role role) {
+        var builder = Jwts.builder()
                 .subject(phoneNumber)
-                .issuedAt(new Date()).expiration(
+                .issuedAt(new Date())
+                .expiration(
                         new Date(
                                 System.currentTimeMillis()
                                         + EXPIRATION_TIME
                         )
-                )
-                .signWith(key)
-                .compact();
+                );
+        if (role != null) {
+            builder.claim("role", role.name());
+        }
+        return builder.signWith(key).compact();
     }
 
     public String extractPhoneNumber(
@@ -53,6 +59,21 @@ public class JwtService {
                         .getPayload();
 
         return claims.getSubject();
+    }
+
+    public String extractRole(String token) {
+        try {
+            Claims claims =
+                    Jwts.parser()
+                            .verifyWith(key)
+                            .build()
+                            .parseSignedClaims(token)
+                            .getPayload();
+
+            return claims.get("role", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean isValid(String token) {
