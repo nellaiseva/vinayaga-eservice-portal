@@ -170,3 +170,28 @@ Project: Nellai / Vinayaga E-Service Portal
   - `testDownloadDocument_PathTraversalAttempt_DoesNotReadArbitraryLocalFile`: Confirms path traversal attempts cannot read arbitrary local files.
   - Test result: 3 tests run, 0 failures, BUILD SUCCESS.
   - Full test suite: 32 tests run, 0 failures, 1 skipped (`Eservice1ApplicationTests`), BUILD SUCCESS.
+
+---
+
+## [PHASE-5A] Database Migration Architecture (Flyway & Hibernate Validation)
+- **Date**: 2026-09-24
+- **Status**: IMPLEMENTED & VERIFIED
+- **Severity**: Critical Architecture / Production Reliability
+- **Files Modified / Created**:
+  - `pom.xml` (Added `flyway-core` and `flyway-database-postgresql`)
+  - `src/main/resources/application.properties` (Configured `ddl-auto=validate`, Flyway baseline & enabled)
+  - `src/main/resources/application-prod.properties` (New: Production profile explicit validation & migration settings)
+  - `src/main/resources/db/migration/V1__initial_schema.sql` (New: Baseline migration representing current complete schema)
+  - `src/test/resources/application.properties` (Configured `ddl-auto=validate` & Flyway baseline)
+  - `DATABASE_MIGRATION_GUIDE.md` (New: Comprehensive operational and deployment guide)
+- **Problem**:
+  The application previously relied on Hibernate's `ddl-auto=update` to modify the PostgreSQL database schema automatically at runtime. Automatic schema mutation creates operational risk in production (untracked schema drifts, locking, loss of auditability, inability to run deterministic schema deployments).
+- **Fix Details**:
+  1. Integrated Flyway 11.7.2 with PostgreSQL support.
+  2. Established initial baseline migration `V1__initial_schema.sql` under `src/main/resources/db/migration/` preserving all 19 application tables, sequences, foreign keys, unique constraints, and security protections (including single OWNER constraint `uk_users_single_owner`, `customer_requests.version`, and `payment_audit_logs`).
+  3. Replaced `ddl-auto=update` with `ddl-auto=validate` across all profiles so Hibernate only verifies the schema and cannot alter it.
+  4. Implemented non-destructive baseline strategy (`baseline-on-migrate=true`, `baseline-version=1`) to seamlessly adopt the existing live database without schema recreation.
+  5. Verified fresh database creation from empty schema using Flyway migration followed by successful Hibernate validation.
+- **Tests Added & Verified**:
+  - Full test suite: 93 tests run, 0 failures, 0 errors, 0 skipped. BUILD SUCCESS.
+  - Live PostgreSQL database verification: 20 tables (19 app + `flyway_schema_history`), 86 constraints, all indexes verified.
