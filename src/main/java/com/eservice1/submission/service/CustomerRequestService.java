@@ -63,6 +63,7 @@ public class CustomerRequestService {
         this.paymentAuditLogRepository = paymentAuditLogRepository;
     }
 
+    @Transactional
     public CustomerRequest createRequest(
             CustomerRequestDTO dto,
             String authenticatedPhoneNumber) {

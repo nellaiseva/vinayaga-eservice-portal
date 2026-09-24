@@ -54,14 +54,30 @@ public class TaskService {
             throw new AccessDeniedException("You are not authorized to operate on this task.");
         }
     }
+
+    private Task findTaskWithLock(Long taskId) {
+        return taskRepository.findByIdForUpdate(taskId)
+                .or(() -> taskRepository.findById(taskId))
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+    }
+
+    private Task findTaskByRequestIdWithLock(Long requestId) {
+        return taskRepository.findByRequestIdForUpdate(requestId)
+                .orElseGet(() -> {
+                    Task t = taskRepository.findByRequestId(requestId);
+                    if (t == null) {
+                        throw new ResourceNotFoundException("Task not found for request " + requestId);
+                    }
+                    return t;
+                });
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public Task selfAssign(
             Long requestId,
             String phoneNumber) {
 
-        Task task =
-                taskRepository.findByRequestId(
-                        requestId
-                );
+        Task task = findTaskByRequestIdWithLock(requestId);
 
         Employee employee =
                 employeeRepository
@@ -93,6 +109,7 @@ public class TaskService {
 
         return taskRepository.save(task);
     }
+
     public Task createTask(Task task) {
 
         task.setStatus(TaskStatus.PENDING);
@@ -267,17 +284,17 @@ public class TaskService {
         return acceptTask(taskId, SecurityContextHolder.getContext().getAuthentication());
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Task acceptTask(Long taskId, Authentication authentication) {
 
-        Task task =
-                taskRepository.findById(taskId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Task not found."
-                                )
-                        );
+        Task task = findTaskWithLock(taskId);
 
         requireTaskOperateAccess(task, authentication);
+
+        if (task.getStatus() == TaskStatus.COMPLETED) {
+            throw new com.eservice1.common.exception.InvalidOperationException(
+                    "Task is already completed and cannot be re-accepted.");
+        }
 
         task.setStatus(
                 TaskStatus.IN_PROGRESS
@@ -295,6 +312,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+
     public Task updatePriority(
             Long taskId,
             Priority priority) {
@@ -302,18 +320,13 @@ public class TaskService {
         return updatePriority(taskId, priority, SecurityContextHolder.getContext().getAuthentication());
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Task updatePriority(
             Long taskId,
             Priority priority,
             Authentication authentication) {
 
-        Task task =
-                taskRepository.findById(taskId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Task not found."
-                                )
-                        );
+        Task task = findTaskWithLock(taskId);
 
         requireTaskOperateAccess(task, authentication);
 
@@ -322,24 +335,12 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Task assignEmployee(
             Long requestId,
             Long employeeId) {
 
-       // System.out.println("ASSIGN SERVICE HIT");
-       // System.out.println("REQUEST ID = " + requestId);
-       // System.out.println("EMPLOYEE ID = " + employeeId);
-
-        Task task =
-                taskRepository.findByRequestId(
-                        requestId
-                );
-
-        if (task == null) {
-            throw new ResourceNotFoundException(
-                    "Task not found "
-            );
-        }
+        Task task = findTaskByRequestIdWithLock(requestId);
 
         Employee employee =
                 employeeRepository.findById(
@@ -372,17 +373,17 @@ public class TaskService {
         return completeTask(taskId, SecurityContextHolder.getContext().getAuthentication());
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Task completeTask(Long taskId, Authentication authentication) {
 
-        Task task =
-                taskRepository.findById(taskId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Task not found."
-                                )
-                        );
+        Task task = findTaskWithLock(taskId);
 
         requireTaskOperateAccess(task, authentication);
+
+        if (task.getStatus() == TaskStatus.COMPLETED) {
+            throw new com.eservice1.common.exception.InvalidOperationException(
+                    "Task is already completed.");
+        }
 
         task.setStatus(
                 TaskStatus.COMPLETED
@@ -399,6 +400,7 @@ public class TaskService {
 
         return taskRepository.save(task);
     }
+
     private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
             "pdf", "jpg", "jpeg", "png", "doc", "docx"
     );
@@ -413,6 +415,7 @@ public class TaskService {
 
     private static final long MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
+    @org.springframework.transaction.annotation.Transactional
     public void uploadResult(
             Long taskId,
             MultipartFile file)
@@ -420,6 +423,7 @@ public class TaskService {
         uploadResultInternal(taskId, file, null, false);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void uploadResult(
             Long taskId,
             MultipartFile file,
@@ -501,47 +505,57 @@ public class TaskService {
             throw new SecurityException("Potential path traversal detected.");
         }
 
-        file.transferTo(destinationFile);
+        try {
+            file.transferTo(destinationFile);
 
-        String safeDisplayName = "RESULT_" + simpleName.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String safeDisplayName = "RESULT_" + simpleName.replaceAll("[^a-zA-Z0-9._-]", "_");
 
-        UploadedDocument document =
-                new UploadedDocument();
+            UploadedDocument document =
+                    new UploadedDocument();
 
-        document.setDocumentName(
-                safeDisplayName
-        );
+            document.setDocumentName(
+                    safeDisplayName
+            );
 
-        document.setFileName(
-                safeStorageFileName
-        );
+            document.setFileName(
+                    safeStorageFileName
+            );
 
-        document.setFilePath(
-                destinationFile.getAbsolutePath()
-        );
+            document.setFilePath(
+                    destinationFile.getAbsolutePath()
+            );
 
-        document.setRequest(
-                task.getRequest()
-        );
-        document.setResultDocument(true);
-        uploadedDocumentRepository.save(
-                document
-        );
+            document.setRequest(
+                    task.getRequest()
+            );
+            document.setResultDocument(true);
+            uploadedDocumentRepository.save(
+                    document
+            );
 
-        task.setStatus(
-                TaskStatus.COMPLETED
-        );
+            task.setStatus(
+                    TaskStatus.COMPLETED
+            );
 
-        task.getRequest()
-                .setStatus(
-                        RequestStatus.COMPLETED
-                );
+            task.getRequest()
+                    .setStatus(
+                            RequestStatus.COMPLETED
+                    );
 
-        requestRepository.save(
-                task.getRequest()
-        );
+            requestRepository.save(
+                    task.getRequest()
+            );
 
-        taskRepository.save(task);
+            taskRepository.save(task);
+        } catch (Exception e) {
+            try {
+                if (destinationFile.exists()) {
+                    destinationFile.delete();
+                }
+            } catch (Exception ignored) {
+            }
+            throw e;
+        }
     }
     public EmployeeDashboardStatsDTO getDashboardStats(
             String phoneNumber

@@ -39,6 +39,7 @@ public class ReceiptService {
         this.requestAccessService = requestAccessService;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Receipt uploadReceipt(
             Long taskId,
             MultipartFile file,
@@ -67,15 +68,23 @@ public class ReceiptService {
             throw new InvalidOperationException("Invalid receipt file path.");
         }
 
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        Receipt receipt = new Receipt();
+            Receipt receipt = new Receipt();
 
-        receipt.setTask(task);
-        receipt.setFileName(file.getOriginalFilename());
-        receipt.setFilePath(filePath.toString());
+            receipt.setTask(task);
+            receipt.setFileName(file.getOriginalFilename());
+            receipt.setFilePath(filePath.toString());
 
-        return receiptRepository.save(receipt);
+            return receiptRepository.save(receipt);
+        } catch (Exception e) {
+            try {
+                Files.deleteIfExists(filePath);
+            } catch (IOException ignored) {
+            }
+            throw e;
+        }
     }
 
     public File getValidatedReceiptFile(Receipt receipt) {

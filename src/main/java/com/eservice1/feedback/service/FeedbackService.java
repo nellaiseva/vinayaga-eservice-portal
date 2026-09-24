@@ -40,6 +40,7 @@ public class FeedbackService {
         );
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Feedback submitFeedback(
             FeedbackDTO dto,
             org.springframework.security.core.Authentication authentication

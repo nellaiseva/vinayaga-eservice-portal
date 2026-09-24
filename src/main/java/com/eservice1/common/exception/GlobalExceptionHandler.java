@@ -227,6 +227,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    /**
+     * Spring Data wraps {@link jakarta.persistence.OptimisticLockException} into
+     * {@link org.springframework.orm.ObjectOptimisticLockingFailureException} before
+     * propagating it to the controller layer.  Without this handler, concurrent requests
+     * that lose an optimistic-lock race would return HTTP 500 instead of the correct 409.
+     */
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleSpringOptimisticLock(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "The request was modified by another operation. Please retry."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(
 

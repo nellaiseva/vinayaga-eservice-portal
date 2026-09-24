@@ -38,6 +38,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.eservice1.employee.dto.CreateEmployeeRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EmployeeService {
 
@@ -96,6 +97,7 @@ public class EmployeeService {
         return dto;
     }
 
+    @Transactional
     public EmployeeProfileDTO updateMyProfile(
             String phoneNumber,
             UpdateEmployeeProfileDTO request
@@ -258,6 +260,7 @@ public class EmployeeService {
         return imagePath.toFile();
     }
 
+    @Transactional
     public Employee promoteUser(
             Long userId) {
 
@@ -311,6 +314,7 @@ public class EmployeeService {
         return employeeRepository
                 .save(employee);
     }
+    @Transactional
     public Employee save(Employee employee) {
         if (employeeRepository.findByPhoneNumber(
                 employee.getPhoneNumber()) != null) {
@@ -354,6 +358,7 @@ public class EmployeeService {
 
         return savedEmployee;
     }
+    @Transactional
     public Employee createEmployee(
             CreateEmployeeRequest request) {
         if (request.getName() == null ||

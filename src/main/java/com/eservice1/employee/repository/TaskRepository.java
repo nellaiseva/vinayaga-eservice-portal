@@ -4,9 +4,12 @@ import com.eservice1.employee.entity.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.eservice1.employee.entity.TaskStatus;
 import java.util.List;
+import java.util.Optional;
 import com.eservice1.employee.entity.Employee;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
 import com.eservice1.employee.dto.MonthlyRevenueDTO;
@@ -21,6 +24,14 @@ public interface TaskRepository
     List<Task> findByEmployeeId(Long employeeId);
 
     Task findByRequestId(Long requestId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Task t WHERE t.id = :id")
+    Optional<Task> findByIdForUpdate(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Task t WHERE t.request.id = :requestId")
+    Optional<Task> findByRequestIdForUpdate(@Param("requestId") Long requestId);
 
     List<Task> findByRequestIdIn(List<Long> requestIds);
 
