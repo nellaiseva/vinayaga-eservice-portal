@@ -6,9 +6,11 @@ import com.eservice1.service.entity.PortalService;
 import com.eservice1.service.repository.PortalServiceRepository;
 import com.eservice1.submission.dto.CustomerRequestDTO;
 import com.eservice1.submission.entity.CustomerRequest;
+import com.eservice1.submission.entity.PaymentAuditLog;
 import com.eservice1.submission.entity.PaymentStatus;
 import com.eservice1.submission.entity.RequestStatus;
 import com.eservice1.submission.repository.CustomerRequestRepository;
+import com.eservice1.submission.repository.PaymentAuditLogRepository;
 import org.springframework.stereotype.Service;
 
 import com.eservice1.employee.entity.Priority;
@@ -27,7 +29,10 @@ import com.eservice1.feedback.repository.FeedbackRepository;
 import com.eservice1.submission.dto.CustomerRequestViewDTO;
 import com.eservice1.customer.entity.CustomerProfile;
 import com.eservice1.customer.repository.CustomerProfileRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class CustomerRequestService {
 
@@ -38,13 +43,16 @@ public class CustomerRequestService {
     private final FeedbackRepository feedbackRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final RequestAccessService requestAccessService;
+    private final PaymentAuditLogRepository paymentAuditLogRepository;
+
     public CustomerRequestService(
             CustomerRequestRepository requestRepository,
             PortalServiceRepository serviceRepository,
             TaskRepository taskRepository,
             FeedbackRepository feedbackRepository,
             CustomerProfileRepository customerProfileRepository,
-            RequestAccessService requestAccessService) {
+            RequestAccessService requestAccessService,
+            PaymentAuditLogRepository paymentAuditLogRepository) {
 
         this.requestRepository = requestRepository;
         this.serviceRepository = serviceRepository;
@@ -52,6 +60,7 @@ public class CustomerRequestService {
         this.feedbackRepository = feedbackRepository;
         this.customerProfileRepository = customerProfileRepository;
         this.requestAccessService = requestAccessService;
+        this.paymentAuditLogRepository = paymentAuditLogRepository;
     }
 
     public CustomerRequest createRequest(
@@ -116,59 +125,111 @@ public class CustomerRequestService {
         taskRepository.save(task);
 
         return savedRequest;
-    }public CustomerRequest updatePayment(
+    }
+
+    /**
+     * Secure payment update with state-machine enforcement, audit logging,
+     * and optimistic-locking support.
+     *
+     * <p>Authorization (enforced by {@link RequestAccessService#requirePaymentAccess}):
+     * <ul>
+     *   <li>OWNER — may perform any transition</li>
+     *   <li>Assigned EMPLOYEE — may mark UNPAID → PAID only</li>
+     *   <li>CUSTOMER — access denied (blocked at SecurityConfig before reaching here)</li>
+     * </ul>
+     *
+     * <p>State-machine rules:
+     * <ol>
+     *   <li>UNPAID → PAID: allowed for OWNER or assigned EMPLOYEE; amount must be > 0 and ≤ 10,000,000</li>
+     *   <li>PAID → PAID: rejected (duplicate payment guard)</li>
+     *   <li>PAID → UNPAID: OWNER only (admin reversal)</li>
+     *   <li>UNPAID → UNPAID: no-op, rejected with an error (caller should not do this)</li>
+     * </ol>
+     *
+     * <p>Every state change is written to {@code payment_audit_logs} in the same transaction.
+     */
+    @Transactional
+    public CustomerRequest updatePayment(
             Long requestId,
-            PaymentStatus paymentStatus,
+            PaymentStatus newStatus,
             Double amount,
             Authentication authentication
     ) {
-
+        // 1. Authorization: OWNER or assigned EMPLOYEE only
         CustomerRequest request = requestAccessService.requirePaymentAccess(
                 requestId,
                 authentication
         );
-        if (
 
-                paymentStatus == PaymentStatus.PAID
+        PaymentStatus currentStatus = request.getPaymentStatus();
+        boolean isOwner = authentication.getAuthorities().stream()
+                .anyMatch(a -> "OWNER".equals(a.getAuthority()));
 
-                        &&
-
-                        (amount == null || amount <= 0)
-
-        ) {
-
+        // 2. State-machine validation
+        if (currentStatus == PaymentStatus.PAID && newStatus == PaymentStatus.PAID) {
             throw new InvalidOperationException(
-                    "Amount must be greater than zero."
+                    "This request has already been marked as paid. Duplicate payment update rejected."
             );
-
         }
 
-        request.setPaymentStatus(
-                paymentStatus
-        );
-
-        request.setAmount(amount);
-
-        if(
-                paymentStatus==
-                        PaymentStatus.PAID
-        ){
-
-            request.setPaymentDate(
-                    LocalDateTime.now()
-            );
-
-        }else{
-
-            request.setPaymentDate(
-                    null
-            );
-
+        if (currentStatus == PaymentStatus.PAID && newStatus == PaymentStatus.UNPAID) {
+            if (!isOwner) {
+                throw new AccessDeniedException(
+                        "Only the OWNER can reverse a payment back to UNPAID."
+                );
+            }
         }
 
-        return requestRepository.save(request);
+        if (currentStatus == PaymentStatus.UNPAID && newStatus == PaymentStatus.UNPAID) {
+            throw new InvalidOperationException(
+                    "Request is already UNPAID. No state change occurred."
+            );
+        }
 
+        // 3. Amount validation (required when marking PAID)
+        if (newStatus == PaymentStatus.PAID) {
+            if (amount == null || amount <= 0) {
+                throw new InvalidOperationException(
+                        "Amount must be greater than zero."
+                );
+            }
+            if (amount > 10_000_000) {
+                throw new InvalidOperationException(
+                        "Amount exceeds the maximum permitted value."
+                );
+            }
+        }
+
+        // 4. Apply state change
+        request.setPaymentStatus(newStatus);
+
+        if (newStatus == PaymentStatus.PAID) {
+            request.setAmount(amount);
+            request.setPaymentDate(LocalDateTime.now());
+        } else {
+            // UNPAID reversal: clear the amount and date
+            request.setAmount(0.0);
+            request.setPaymentDate(null);
+        }
+
+        CustomerRequest saved = requestRepository.save(request);
+
+        // 5. Write audit log in the same transaction
+        PaymentAuditLog auditLog = new PaymentAuditLog();
+        auditLog.setRequestId(requestId);
+        auditLog.setPreviousStatus(currentStatus);
+        auditLog.setNewStatus(newStatus);
+        auditLog.setAmount(newStatus == PaymentStatus.PAID ? amount : null);
+        auditLog.setPerformedBy(authentication.getName());
+        auditLog.setPerformedAt(LocalDateTime.now());
+        if (currentStatus == PaymentStatus.PAID && newStatus == PaymentStatus.UNPAID) {
+            auditLog.setNotes("Admin reversal by OWNER");
+        }
+        paymentAuditLogRepository.save(auditLog);
+
+        return saved;
     }
+
     public PageResponseDTO<AdminRequestDTO> getAllRequests(
 
             int page,
@@ -256,6 +317,7 @@ public class CustomerRequestService {
         );
 
     }
+
     public PageResponseDTO<CustomerRequestViewDTO> getRequests(
 
             String phoneNumber,

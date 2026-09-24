@@ -12,6 +12,14 @@ public class CustomerRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Optimistic locking version. Hibernate increments this on every update.
+     * Concurrent payment updates will result in an OptimisticLockException
+     * (mapped to HTTP 409) rather than a silent last-write-wins race.
+     */
+    @Version
+    private Long version;
+
     private String customerName;
 
     private String phoneNumber;

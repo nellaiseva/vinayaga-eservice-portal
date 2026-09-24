@@ -215,6 +215,18 @@ public class GlobalExceptionHandler {
                 .body(error);
 
     }
+    @ExceptionHandler(jakarta.persistence.OptimisticLockException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            jakarta.persistence.OptimisticLockException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "The request was modified by another operation. Please retry."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(
 
