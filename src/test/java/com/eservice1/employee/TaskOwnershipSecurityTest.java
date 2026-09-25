@@ -43,8 +43,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import com.eservice1.submission.entity.UploadedDocument;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -109,10 +112,29 @@ public class TaskOwnershipSecurityTest {
     private CustomerRequest requestA;
 
     private final List<File> createdFilesToDelete = new ArrayList<>();
+    private final Set<String> preExistingUploadFiles = new HashSet<>();
 
     @BeforeEach
     void setUp() throws Exception {
         reset(taskRepository, employeeRepository, requestRepository, uploadedDocumentRepository);
+
+        File uploadsDir = new File(System.getProperty("user.dir"), "uploads");
+        if (uploadsDir.exists() && uploadsDir.isDirectory()) {
+            File[] files = uploadsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    preExistingUploadFiles.add(f.getAbsolutePath());
+                }
+            }
+        }
+
+        when(uploadedDocumentRepository.save(any(UploadedDocument.class))).thenAnswer(invocation -> {
+            UploadedDocument doc = invocation.getArgument(0);
+            if (doc != null && doc.getFilePath() != null) {
+                createdFilesToDelete.add(new File(doc.getFilePath()));
+            }
+            return doc;
+        });
 
         doAnswer(invocation -> {
             HttpServletRequest req = invocation.getArgument(0);
@@ -158,6 +180,19 @@ public class TaskOwnershipSecurityTest {
             }
         }
         createdFilesToDelete.clear();
+
+        File uploadsDir = new File(System.getProperty("user.dir"), "uploads");
+        if (uploadsDir.exists() && uploadsDir.isDirectory()) {
+            File[] files = uploadsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.getName().startsWith("RESULT_") && !preExistingUploadFiles.contains(f.getAbsolutePath())) {
+                        f.delete();
+                    }
+                }
+            }
+        }
+        preExistingUploadFiles.clear();
     }
 
     // =========================================================================

@@ -19,7 +19,9 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,11 +42,28 @@ public class FileUploadSecurityTest {
     private TaskService taskService;
     private File testUploadsDir;
     private final java.util.List<File> createdFilesToDelete = new java.util.ArrayList<>();
+    private final Set<String> preExistingUploadFiles = new HashSet<>();
 
     @BeforeEach
     void setUp() {
         taskService = new TaskService(taskRepository, employeeRepository, requestRepository, uploadedDocumentRepository);
         testUploadsDir = new File(System.getProperty("user.dir"), "uploads");
+        if (testUploadsDir.exists() && testUploadsDir.isDirectory()) {
+            File[] files = testUploadsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    preExistingUploadFiles.add(f.getAbsolutePath());
+                }
+            }
+        }
+
+        lenient().when(uploadedDocumentRepository.save(any(UploadedDocument.class))).thenAnswer(invocation -> {
+            UploadedDocument doc = invocation.getArgument(0);
+            if (doc != null && doc.getFilePath() != null) {
+                createdFilesToDelete.add(new File(doc.getFilePath()));
+            }
+            return doc;
+        });
     }
 
     @AfterEach
@@ -56,6 +75,18 @@ public class FileUploadSecurityTest {
             }
         }
         createdFilesToDelete.clear();
+
+        if (testUploadsDir != null && testUploadsDir.exists() && testUploadsDir.isDirectory()) {
+            File[] files = testUploadsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.getName().startsWith("RESULT_") && !preExistingUploadFiles.contains(f.getAbsolutePath())) {
+                        f.delete();
+                    }
+                }
+            }
+        }
+        preExistingUploadFiles.clear();
     }
 
     private Task createMockTask() {
