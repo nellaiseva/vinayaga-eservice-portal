@@ -14,6 +14,9 @@ import java.nio.file.Path;
 import com.eservice1.submission.service.RequestAccessService;
 import org.springframework.security.core.Authentication;
 
+import com.eservice1.submission.service.DocumentRetentionService;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/documents")
 public class UploadedDocumentController {
@@ -21,15 +24,25 @@ public class UploadedDocumentController {
     private final UploadedDocumentRepository documentRepository;
     private final StorageService storageService;
     private final RequestAccessService requestAccessService;
+    private final DocumentRetentionService retentionService;
+
+    public UploadedDocumentController(
+            UploadedDocumentRepository documentRepository,
+            StorageService storageService,
+            RequestAccessService requestAccessService,
+            DocumentRetentionService retentionService) {
+
+        this.documentRepository = documentRepository;
+        this.storageService = storageService;
+        this.requestAccessService = requestAccessService;
+        this.retentionService = retentionService;
+    }
 
     public UploadedDocumentController(
             UploadedDocumentRepository documentRepository,
             StorageService storageService,
             RequestAccessService requestAccessService) {
-
-        this.documentRepository = documentRepository;
-        this.storageService = storageService;
-        this.requestAccessService = requestAccessService;
+        this(documentRepository, storageService, requestAccessService, null);
     }
 
     @GetMapping("/download/{documentId}")
@@ -64,6 +77,21 @@ public class UploadedDocumentController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(fileBytes.length)
                 .body(fileBytes);
+    }
+
+    @DeleteMapping("/{documentId}")
+    public ResponseEntity<Map<String, Object>> deleteDocument(
+            @PathVariable Long documentId,
+            Authentication authentication) {
+
+        if (retentionService != null) {
+            retentionService.deleteCustomerDocument(documentId, authentication);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Document deleted successfully."
+        ));
     }
 
     private Path resolveLocalFilePath(String rawPath) {

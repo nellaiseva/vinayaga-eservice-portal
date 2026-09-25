@@ -35,6 +35,9 @@ public class CustomerRequest {
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @ManyToOne
     @JoinColumn(name = "service_id")
     private PortalService service;
@@ -77,6 +80,17 @@ public class CustomerRequest {
 
     public void setStatus(RequestStatus status) {
         this.status = status;
+        if (status == RequestStatus.COMPLETED && this.completedAt == null) {
+            this.completedAt = LocalDateTime.now();
+        }
+    }
+
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(LocalDateTime completedAt) {
+        this.completedAt = completedAt;
     }
 
     public PortalService getService() {

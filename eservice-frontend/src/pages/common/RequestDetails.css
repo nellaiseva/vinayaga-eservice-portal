@@ -561,9 +561,88 @@
 
     color:#fff;
 
+    border:none;
+
+    cursor:pointer;
+
     flex-shrink:0;
 
     transition:.25s;
+
+}
+
+.document-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    flex-shrink:0;
+
+}
+
+.delete-doc-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:12px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:1.1rem;
+
+    background:#fee2e2;
+
+    border:1px solid #fecaca;
+
+    color:#dc2626;
+
+    cursor:pointer;
+
+    flex-shrink:0;
+
+    transition:all .25s ease;
+
+}
+
+.delete-doc-btn:hover{
+
+    background:#fecdd3;
+
+    border-color:#fca5a5;
+
+    transform:scale(1.08);
+
+}
+
+.document-info.clickable{
+
+    cursor:pointer;
+
+}
+
+.no-documents-message{
+
+    margin:0;
+
+    font-size:.95rem;
+
+    color:#64748b;
+
+    font-family:
+            "Inter",
+            "Segoe UI",
+            sans-serif;
+
+    padding:6px 0;
 
 }
 

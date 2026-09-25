@@ -393,6 +393,7 @@ public class TaskService {
                 .setStatus(
                         RequestStatus.COMPLETED
                 );
+        task.getRequest().setCompletedAt(java.time.LocalDateTime.now());
 
         requestRepository.save(
                 task.getRequest()
@@ -541,6 +542,7 @@ public class TaskService {
                     .setStatus(
                             RequestStatus.COMPLETED
                     );
+            task.getRequest().setCompletedAt(java.time.LocalDateTime.now());
 
             requestRepository.save(
                     task.getRequest()

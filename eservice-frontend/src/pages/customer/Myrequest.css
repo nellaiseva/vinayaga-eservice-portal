@@ -602,6 +602,32 @@ DOCUMENT LIST
 
 }
 
+.document-item-container{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    background:#f8faff;
+
+    border:1px solid #dfe8f8;
+
+    border-radius:10px;
+
+    transition:background .25s, transform .25s, box-shadow .25s;
+
+}
+
+.document-item-container:hover{
+
+    background:#eef4ff;
+
+    transform:translateY(-2px);
+
+    box-shadow:0 4px 12px rgba(41,84,245,.08);
+
+}
+
 .document-item{
 
     display:inline-flex;
@@ -610,15 +636,11 @@ DOCUMENT LIST
 
     gap:8px;
 
-    padding:10px 16px;
+    padding:10px 14px;
 
-    border-radius:10px;
+    background:transparent;
 
-    text-decoration:none;
-
-    background:#f8faff;
-
-    border:1px solid #dfe8f8;
+    border:none;
 
     color:#2954f5;
 
@@ -626,17 +648,63 @@ DOCUMENT LIST
 
     font-weight:500;
 
-    transition:
-            background .25s,
-            transform .25s;
+    cursor:pointer;
+
+    font-family:inherit;
+
+    text-align:left;
 
 }
 
-.document-item:hover{
+.document-delete-btn{
 
-    background:#eef4ff;
+    display:inline-flex;
 
-    transform:translateY(-2px);
+    align-items:center;
+
+    justify-content:center;
+
+    width:32px;
+
+    height:32px;
+
+    margin-right:6px;
+
+    border-radius:8px;
+
+    border:1px solid transparent;
+
+    background:transparent;
+
+    color:#ef4444;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+    transition:all .2s ease;
+
+}
+
+.document-delete-btn:hover{
+
+    background:#fee2e2;
+
+    border-color:#fca5a5;
+
+    transform:scale(1.1);
+
+}
+
+.no-docs-text{
+
+    font-size:14px;
+
+    color:#94a3b8;
+
+    font-style:italic;
+
+    padding:6px 0;
 
 }
 

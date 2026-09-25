@@ -1,11 +1,13 @@
 package com.eservice1.submission.service;
 
+import com.eservice1.common.exception.InvalidOperationException;
 import com.eservice1.common.exception.ResourceNotFoundException;
 import com.eservice1.employee.entity.Employee;
 import com.eservice1.employee.entity.Task;
 import com.eservice1.employee.repository.EmployeeRepository;
 import com.eservice1.employee.repository.TaskRepository;
 import com.eservice1.submission.entity.CustomerRequest;
+import com.eservice1.submission.entity.UploadedDocument;
 import com.eservice1.submission.repository.CustomerRequestRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -113,6 +115,37 @@ public class RequestAccessService {
                 && !isAssignedEmployee(request, authentication)) {
             throw new AccessDeniedException("You are not authorized to upload a result document.");
         }
+    }
+
+    public void requireCustomerDocumentDeleteAccess(
+            UploadedDocument document,
+            Authentication authentication) {
+
+        if (document == null) {
+            throw new ResourceNotFoundException("Document not found.");
+        }
+
+        if (Boolean.TRUE.equals(document.getResultDocument())) {
+            throw new InvalidOperationException("Result documents cannot be deleted by customers.");
+        }
+
+        CustomerRequest request = document.getRequest();
+        if (request == null) {
+            throw new ResourceNotFoundException("Associated request not found.");
+        }
+
+        if (hasAuthority(authentication, "CUSTOMER")) {
+            if (!Objects.equals(request.getPhoneNumber(), authentication != null ? authentication.getName() : null)) {
+                throw new AccessDeniedException("You are not authorized to delete another customer's document.");
+            }
+            return;
+        }
+
+        if (hasAuthority(authentication, "OWNER")) {
+            return;
+        }
+
+        throw new AccessDeniedException("You are not authorized to delete documents.");
     }
 
     private boolean isRequestCustomer(

@@ -35,6 +35,8 @@ public class UploadedDocumentControllerTest {
     @Mock
     private RequestAccessService requestAccessService;
     @Mock
+    private com.eservice1.submission.service.DocumentRetentionService retentionService;
+    @Mock
     private Authentication authentication;
 
     private UploadedDocumentController controller;
@@ -42,7 +44,7 @@ public class UploadedDocumentControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new UploadedDocumentController(documentRepository, storageService, requestAccessService);
+        controller = new UploadedDocumentController(documentRepository, storageService, requestAccessService, retentionService);
     }
 
     @AfterEach
@@ -141,5 +143,27 @@ public class UploadedDocumentControllerTest {
         // It must NOT read the actual local pom.xml file directly
         assertNotNull(response);
         verify(storageService).download("../pom.xml");
+    }
+
+    @Test
+    void testDeleteDocument_Success() {
+        doNothing().when(retentionService).deleteCustomerDocument(15L, authentication);
+
+        ResponseEntity<java.util.Map<String, Object>> response = controller.deleteDocument(15L, authentication);
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue((Boolean) response.getBody().get("success"));
+        verify(retentionService).deleteCustomerDocument(15L, authentication);
+    }
+
+    @Test
+    void testDeleteDocument_AccessDenied() {
+        doThrow(new org.springframework.security.access.AccessDeniedException("Forbidden"))
+                .when(retentionService).deleteCustomerDocument(16L, authentication);
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () ->
+                controller.deleteDocument(16L, authentication));
+        verify(retentionService).deleteCustomerDocument(16L, authentication);
     }
 }

@@ -4,6 +4,7 @@ import axios from "axios";
 import { API_URL } from "../../config";
 import "./RequestDetails.css";
 import LoadingScreen from "../../components/LoadingScreen";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 function RequestDetails() {
 
     const { id } = useParams();
@@ -16,6 +17,9 @@ function RequestDetails() {
 
     const [documents, setDocuments] =
         useState([]);
+    const [documentToDelete, setDocumentToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
     const customerDocuments = (documents || []).filter(
         doc => !doc.resultDocument
     );
@@ -171,6 +175,48 @@ function RequestDetails() {
             );
         }
     };
+
+    const loggedInPhone = localStorage.getItem("customerPhone") || localStorage.getItem("phoneNumber");
+    const userRole = localStorage.getItem("role");
+    const canDeleteCustomerDocs = (userRole === "OWNER") || (Boolean(loggedInPhone && request && loggedInPhone === request.phoneNumber));
+
+    const handleDeleteClick = (doc) => {
+        setDeleteError("");
+        setDocumentToDelete(doc);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!documentToDelete) return;
+        try {
+            setIsDeleting(true);
+            setDeleteError("");
+            const token = localStorage.getItem("token");
+            await axios.delete(`${API_URL}/documents/${documentToDelete.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setDocuments(prev => prev.filter(d => d.id !== documentToDelete.id));
+            setDocumentToDelete(null);
+        } catch (err) {
+            console.error("Failed to delete document:", err);
+            setDeleteError(
+                err.response?.data?.message ||
+                (typeof err.response?.data === "string" ? err.response?.data : null) ||
+                "Failed to delete document. Please try again."
+            );
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        if (!isDeleting) {
+            setDocumentToDelete(null);
+            setDeleteError("");
+        }
+    };
+
     if (loading) {
         return <LoadingScreen message="Loading request details..." />;
     }
@@ -316,38 +362,81 @@ function RequestDetails() {
                                     Uploaded Documents
                                 </h3>
 
-                                <div className="documents-grid">
+                                {customerDocuments.length === 0 ? (
+                                    <p className="no-documents-message">No uploaded documents available.</p>
+                                ) : (
+                                    <div className="documents-grid">
 
-                                    {customerDocuments.map(doc => (
+                                        {customerDocuments.map(doc => (
 
-                                        <button
-                                            key={doc.id}
-                                            onClick={() =>
-                                                downloadDocument(
-                                                    doc.id,
-                                                    doc.fileName
-                                                )
-                                            }                                            className="document-card"
-                                        >
-                                            <div className="document-info">
-        <span className="document-icon">
-            📄
-        </span>
+                                            <div
+                                                key={doc.id}
+                                                className="document-card"
+                                            >
+                                                <div
+                                                    className="document-info clickable"
+                                                    onClick={() =>
+                                                        downloadDocument(
+                                                            doc.id,
+                                                            doc.fileName
+                                                        )
+                                                    }
+                                                    title={`Download ${doc.documentName}`}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter" || e.key === " ") {
+                                                            downloadDocument(doc.id, doc.fileName);
+                                                        }
+                                                    }}
+                                                >
+                                                    <span className="document-icon">
+                                                        📄
+                                                    </span>
 
-                                                <span className="document-name">
-            {doc.documentName.length > 25
-                ? doc.documentName.substring(0, 25) + "..."
-                : doc.documentName}
-        </span>
+                                                    <span className="document-name">
+                                                        {doc.documentName.length > 25
+                                                            ? doc.documentName.substring(0, 25) + "..."
+                                                            : doc.documentName}
+                                                    </span>
+                                                </div>
+
+                                                <div className="document-actions">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            downloadDocument(
+                                                                doc.id,
+                                                                doc.fileName
+                                                            )
+                                                        }
+                                                        className="download-icon"
+                                                        title="Download document"
+                                                        aria-label={`Download ${doc.documentName}`}
+                                                    >
+                                                        ⬇
+                                                    </button>
+
+                                                    {canDeleteCustomerDocs && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteClick(doc);
+                                                            }}
+                                                            className="delete-doc-btn"
+                                                            title="Delete document"
+                                                            aria-label={`Delete ${doc.documentName}`}
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
+                                        ))}
 
-                                            <span className="download-icon">
-        ⬇
-    </span>
-                                        </button>
-                                    ))}
-
-                                </div>
+                                    </div>
+                                )}
 
                             </div>
 
@@ -517,6 +606,15 @@ function RequestDetails() {
                 </div>
 
             </div>
+
+            <DeleteConfirmationModal
+                isOpen={Boolean(documentToDelete)}
+                documentName={documentToDelete?.documentName || documentToDelete?.fileName}
+                isDeleting={isDeleting}
+                errorMessage={deleteError}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            />
 
         </div>
 

@@ -6,12 +6,17 @@ import { API_URL } from "../../config";
 import Pagination from "../../components/Pagination";
 import "./Myrequest.css";
 import LoadingScreen from "../../components/LoadingScreen";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 function MyRequests() {
 
     const [requests, setRequests] = useState([]);
     const [documents,
         setDocuments] =
         useState({});
+    const [documentToDelete, setDocumentToDelete] = useState(null);
+    const [deleteRequestId, setDeleteRequestId] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
     const [showFeedback, setShowFeedback] = useState(false);
 
     const [selectedRequest, setSelectedRequest] = useState(null);
@@ -115,6 +120,86 @@ function MyRequests() {
 
         }));
     };
+
+    const downloadDocument = async (documentId, fileName) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(
+                `${API_URL}/documents/download/${documentId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    responseType: "blob"
+                }
+            );
+
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        response.headers["content-type"] ||
+                        "application/octet-stream"
+                }
+            );
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName || "document";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Document download failed:", error);
+            alert("Failed to download document.");
+        }
+    };
+
+    const handleDeleteClick = (doc, requestId) => {
+        setDeleteError("");
+        setDocumentToDelete(doc);
+        setDeleteRequestId(requestId);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!documentToDelete || !deleteRequestId) return;
+        try {
+            setIsDeleting(true);
+            setDeleteError("");
+            const token = localStorage.getItem("token");
+            await axios.delete(`${API_URL}/documents/${documentToDelete.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setDocuments(prev => ({
+                ...prev,
+                [deleteRequestId]: (prev[deleteRequestId] || []).filter(d => d.id !== documentToDelete.id)
+            }));
+            setDocumentToDelete(null);
+            setDeleteRequestId(null);
+        } catch (err) {
+            console.error("Failed to delete document:", err);
+            setDeleteError(
+                err.response?.data?.message ||
+                (typeof err.response?.data === "string" ? err.response?.data : null) ||
+                "Failed to delete document. Please try again."
+            );
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        if (!isDeleting) {
+            setDocumentToDelete(null);
+            setDeleteRequestId(null);
+            setDeleteError("");
+        }
+    };
+
     const submitFeedback = async () => {
 
         try {
@@ -410,30 +495,37 @@ function MyRequests() {
 
                                                     <div className="documents-list">
 
-                                                        {
-
+                                                        {documents[request.id].length === 0 ? (
+                                                            <span className="no-docs-text">No documents found.</span>
+                                                        ) : (
                                                             documents[request.id].map(doc => (
-
-                                                                <a
-
+                                                                <div
                                                                     key={doc.id}
-
-                                                                    href={`${API_URL}/documents/download/${doc.id}`}
-
-                                                                    target="_blank"
-
-                                                                    rel="noreferrer"
-
-                                                                    className="document-item"
-
+                                                                    className="document-item-container"
                                                                 >
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => downloadDocument(doc.id, doc.fileName || doc.documentName)}
+                                                                        className="document-item"
+                                                                        title={`Download ${doc.documentName || doc.fileName || "Document"}`}
+                                                                    >
+                                                                        📄 {doc.documentName || doc.fileName || "Document"}
+                                                                    </button>
 
-                                                                    📄 {doc.documentName || doc.fileName || "Document"}
-                                                                </a>
-
+                                                                    {!doc.resultDocument && (
+                                                                        <button
+                                                                            type="button"
+                                                                            className="document-delete-btn"
+                                                                            onClick={() => handleDeleteClick(doc, request.id)}
+                                                                            title="Delete document"
+                                                                            aria-label={`Delete ${doc.documentName || doc.fileName || "Document"}`}
+                                                                        >
+                                                                            🗑️
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             ))
-
-                                                        }
+                                                        )}
 
                                                     </div>
 
@@ -596,6 +688,15 @@ function MyRequests() {
                 </div>
 
             </div>
+
+            <DeleteConfirmationModal
+                isOpen={Boolean(documentToDelete)}
+                documentName={documentToDelete?.documentName || documentToDelete?.fileName}
+                isDeleting={isDeleting}
+                errorMessage={deleteError}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            />
 
         </>
     );
