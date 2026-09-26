@@ -1,0 +1,26 @@
+services:
+  vinayaga-eservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: vinayaga-eservice
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    volumes:
+      - ./uploads:/app/uploads
+      - ./receipts:/app/receipts
+
+    networks:
+      - eservice-network
+
+networks:
+  eservice-network:
+    external: true
+
