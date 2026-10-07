@@ -48,7 +48,7 @@ function EmployeeRequests() {
 
         axios.get(
 
-            `${API_URL}/admin/dashboard/stats`,
+            `${API_URL}/employee/requests/stats`,
 
             {
 
@@ -147,7 +147,7 @@ function EmployeeRequests() {
 
                 await axios.get(
 
-                    `${API_URL}/admin/requests?${params.toString()}`,
+                    `${API_URL}/employee/requests?${params.toString()}`,
 
                     {
                         headers: {
