@@ -123,9 +123,7 @@ function ServiceDocuments() {
                     {
                         headers: {
                             Authorization:
-                                `Bearer ${token}`,
-                            "Content-Type":
-                                "multipart/form-data"
+                                `Bearer ${token}`
                         }
                     }
                 );
@@ -157,12 +155,8 @@ function ServiceDocuments() {
                 "/my-requests"
             );
         } catch (error) {
-
             console.error(error);
-
-            alert(
-                "Request Submission Failed"
-            );
+            alert("Request Submission Failed");
         }
     };
     useEffect(() => {
@@ -432,22 +426,15 @@ function ServiceDocuments() {
 
                                                             if (!file) return;
 
-                                                            setUploadedFiles({
-
-                                                                ...uploadedFiles,
-
+                                                            setUploadedFiles(prev => ({
+                                                                ...prev,
                                                                 [document.documentName]: file
-
-                                                            });
-
-                                                            setPreviewUrls({
-
-                                                                ...previewUrls,
-
+                                                            }));
+                                                            setPreviewUrls(prev => ({
+                                                                ...prev,
                                                                 [document.documentName]:
                                                                     URL.createObjectURL(file)
-
-                                                            });
+                                                            }));
 
                                                         }}
 
@@ -477,22 +464,15 @@ function ServiceDocuments() {
 
                                                             if (!file) return;
 
-                                                            setUploadedFiles({
-
-                                                                ...uploadedFiles,
-
+                                                            setUploadedFiles(prev => ({
+                                                                ...prev,
                                                                 [document.documentName]: file
-
-                                                            });
-
-                                                            setPreviewUrls({
-
-                                                                ...previewUrls,
-
+                                                            }));
+                                                            setPreviewUrls(prev => ({
+                                                                ...prev,
                                                                 [document.documentName]:
                                                                     URL.createObjectURL(file)
-
-                                                            });
+                                                            }));
 
                                                         }}
 

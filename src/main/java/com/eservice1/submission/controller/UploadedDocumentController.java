@@ -38,12 +38,6 @@ public class UploadedDocumentController {
         this.retentionService = retentionService;
     }
 
-    public UploadedDocumentController(
-            UploadedDocumentRepository documentRepository,
-            StorageService storageService,
-            RequestAccessService requestAccessService) {
-        this(documentRepository, storageService, requestAccessService, null);
-    }
 
     @GetMapping("/download/{documentId}")
     public ResponseEntity<byte[]> downloadDocument(
