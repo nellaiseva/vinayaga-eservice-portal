@@ -28,6 +28,17 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "customer_enrolled", nullable = false)
+    private Boolean customerEnrolled = false;
+
+    public Boolean isCustomerEnrolled() {
+        return Boolean.TRUE.equals(customerEnrolled);
+    }
+
+    public void setCustomerEnrolled(Boolean customerEnrolled) {
+        this.customerEnrolled = customerEnrolled;
+    }
+
     public GrantedAuthority getAuthority() {
 
         return new SimpleGrantedAuthority(

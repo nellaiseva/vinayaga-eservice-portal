@@ -219,3 +219,65 @@
 .customer-login-page * {
     font-family:"Poppins", sans-serif;
 }
+
+.login-back-btn {
+    background: none;
+    border: none;
+    color: #2457c5;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 14px;
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+}
+
+.login-back-btn:hover {
+    text-decoration: underline;
+}
+
+.phone-badge {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: rgba(45, 93, 209, 0.08);
+    border: 1px solid rgba(45, 93, 209, 0.18);
+    margin-bottom: 18px;
+    font-size: 15px;
+    color: #162238;
+    font-weight: 600;
+}
+
+.phone-badge-change {
+    background: none;
+    border: none;
+    color: #2457c5;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.phone-badge-change:hover {
+    text-decoration: underline;
+}
+
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 17px;
+    color: #5e6979;
+    padding: 0;
+}

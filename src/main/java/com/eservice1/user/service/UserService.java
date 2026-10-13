@@ -26,6 +26,7 @@ import com.eservice1.user.dto.AuthResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.eservice1.security.service.LoginAttemptService;
 import com.eservice1.common.exception.AccountLockedException;
+import com.eservice1.common.exception.AccountNotEnrolledException;
 import com.eservice1.user.dto.RegisterRequest;
 
 @Service
@@ -105,7 +106,15 @@ public class UserService {
         User user =
                 userRepository.findByPhoneNumber(
                         request.getPhoneNumber()
-                ).orElseThrow();
+                ).orElseThrow(() -> new InvalidCredentialsException(
+                        "Invalid phone number or password."
+                ));
+
+        if (user.getRole() == Role.CUSTOMER && !user.isCustomerEnrolled()) {
+            throw new AccountNotEnrolledException(
+                    "Your account is not enrolled with a password. Please complete first-time enrollment via OTP."
+            );
+        }
 
         if (loginAttemptService.isLocked(
                 request.getPhoneNumber())) {
@@ -119,11 +128,8 @@ public class UserService {
             );
 
         }
-        // System.out.println("LOGIN USER = " + user.getName());
-        //System.out.println("ROLE = " + user.getRole());
-        //System.out.println("DB PASSWORD = " + user.getPassword());
-        //System.out.println("REQUEST PASSWORD = " + request.getPassword());
-        if (!passwordEncoder.matches(
+
+        if (user.getPassword() == null || !passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword()
         )) {

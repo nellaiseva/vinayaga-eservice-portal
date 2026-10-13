@@ -13,9 +13,9 @@ public class LoginRequest {
 
     @NotBlank(message = "Password is required.")
     @Size(
-            min = 6,
+            min = 4,
             max = 100,
-            message = "Password must be between 6 and 100 characters."
+            message = "Password must be between 4 and 100 characters."
     )
     private String password;
 

@@ -37,6 +37,9 @@ public class SecurityConfig {
             "/employee/forgot-password/send-otp",
             "/employee/forgot-password/verify-otp",
             "/employee/forgot-password/reset",
+            "/customer/auth/status",
+            "/customer/enroll/**",
+            "/customer/forgot-password/**",
     };
 
     private final JwtFilter jwtFilter;
@@ -91,7 +94,10 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/customer/send-otp",
-                                "/customer/verify-otp"
+                                "/customer/verify-otp",
+                                "/customer/auth/status",
+                                "/customer/enroll/**",
+                                "/customer/forgot-password/**"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/requests")

@@ -38,10 +38,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity
 
                 .status(HttpStatus.TOO_MANY_REQUESTS)
-
                 .body(error);
+    }
 
-    }@ExceptionHandler(InvalidCredentialsException.class)
+    @ExceptionHandler(AccountNotEnrolledException.class)
+    public ResponseEntity<ErrorResponse> handleAccountNotEnrolled(
+            AccountNotEnrolledException ex
+    ) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Account Not Enrolled",
+                ex.getMessage()
+        );
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(error);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(
 
             InvalidCredentialsException ex
@@ -245,6 +260,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+
+    @ExceptionHandler(org.springframework.dao.CannotAcquireLockException.class)
+    public ResponseEntity<ErrorResponse> handleCannotAcquireLock(
+            org.springframework.dao.CannotAcquireLockException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "Could not acquire lock for operation. Please try again."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(
