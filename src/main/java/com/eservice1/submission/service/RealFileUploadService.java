@@ -9,12 +9,16 @@ import com.eservice1.submission.repository.UploadedDocumentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import com.eservice1.common.exception.InvalidOperationException;
 import com.eservice1.common.exception.ResourceNotFoundException;
 
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
+
 @Service
 public class RealFileUploadService {
 
@@ -22,10 +26,8 @@ public class RealFileUploadService {
     private final CustomerRequestRepository requestRepository;
     private final StorageService storageService;
 
-
     @Value("${file.max-size}")
     private long maxFileSize;
-
 
     public RealFileUploadService(
             UploadedDocumentRepository documentRepository,
@@ -41,7 +43,16 @@ public class RealFileUploadService {
             Long requestId,
             String documentName,
             MultipartFile file,
-            boolean isResult)throws IOException {
+            boolean isResult) throws IOException {
+        return uploadFile(requestId, documentName, documentName, file, isResult);
+    }
+
+    public UploadedDocument uploadFile(
+            Long requestId,
+            String documentName,
+            String documentType,
+            MultipartFile file,
+            boolean isResult) throws IOException {
 
         CustomerRequest request =
                 requestRepository.findById(requestId)
@@ -51,24 +62,19 @@ public class RealFileUploadService {
                                 )
                         );
         if (request.getStatus() == RequestStatus.COMPLETED) {
-
             throw new InvalidOperationException(
                     "Cannot upload documents for a completed request."
             );
-
         }
         if (file.isEmpty()) {
-
             throw new InvalidOperationException(
                     "Please select a file."
             );
-
         }
         if (file.getSize() > maxFileSize) {
             throw new InvalidOperationException(
                     "Maximum file size is 30 MB."
             );
-
         }
         Set<String> allowedTypes = Set.of(
                 "application/pdf",
@@ -79,37 +85,34 @@ public class RealFileUploadService {
                 "image/heif"
         );
         if (!allowedTypes.contains(file.getContentType())) {
-
             throw new InvalidOperationException(
                     "Unsupported file type."
             );
-
         }
-        if (documentName == null ||
-
-                documentName.isBlank()) {
-
+        if (documentName == null || documentName.isBlank()) {
             throw new InvalidOperationException(
                     "Document name cannot be empty."
             );
-
         }
 
-        //System.out.println("Saving to: " + filePath);
+        String resolvedType = (documentType != null && !documentType.isBlank())
+                ? documentType.trim()
+                : documentName.trim();
 
         String objectPath = storageService.upload(file, requestId);
-        UploadedDocument document =
-                new UploadedDocument();
+        UploadedDocument document = new UploadedDocument();
 
-        document.setDocumentName(documentName);
+        document.setDocumentName(documentName.trim());
+        document.setDocumentType(resolvedType);
         document.setFileName(file.getOriginalFilename());
         document.setFilePath(objectPath);
         document.setRequest(request);
         document.setResultDocument(isResult);
+
         return documentRepository.save(document);
     }
-    public UploadedDocument getDocument(Long documentId) {
 
+    public UploadedDocument getDocument(Long documentId) {
         return documentRepository.findById(documentId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
@@ -119,7 +122,6 @@ public class RealFileUploadService {
     }
 
     public byte[] downloadDocument(Long documentId) {
-
         UploadedDocument document =
                 documentRepository.findById(documentId)
                         .orElseThrow(() ->
@@ -127,6 +129,17 @@ public class RealFileUploadService {
                                         "Document not found."
                                 )
                         );
+
+        if (document.getFilePath() != null) {
+            File localFile = new File(document.getFilePath());
+            if (localFile.exists() && localFile.isFile()) {
+                try {
+                    return Files.readAllBytes(Path.of(document.getFilePath()));
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read file", e);
+                }
+            }
+        }
 
         return storageService.download(
                 document.getFilePath()

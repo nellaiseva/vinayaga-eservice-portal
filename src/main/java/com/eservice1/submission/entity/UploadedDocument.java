@@ -3,6 +3,7 @@ package com.eservice1.submission.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "uploaded_documents")
 public class UploadedDocument {
@@ -12,6 +13,9 @@ public class UploadedDocument {
     private Long id;
 
     private String documentName;
+
+    @Column(name = "document_type")
+    private String documentType;
 
     private String fileName;
 
@@ -40,6 +44,14 @@ public class UploadedDocument {
 
     public void setDocumentName(String documentName) {
         this.documentName = documentName;
+    }
+
+    public String getDocumentType() {
+        return documentType != null ? documentType : documentName;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
     }
 
     public String getFileName() {

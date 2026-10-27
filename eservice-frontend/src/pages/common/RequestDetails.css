@@ -1054,3 +1054,19 @@
     background:#94a3b8;
 
 }
+.document-text-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.document-filename {
+    font-size: 0.78rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}

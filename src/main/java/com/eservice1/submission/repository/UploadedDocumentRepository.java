@@ -15,13 +15,21 @@ public interface UploadedDocumentRepository
     List<UploadedDocument> findByRequest_Id(
             Long requestId
     );
-    List<UploadedDocument>
-    findByRequest_IdAndResultDocument(
 
+    List<UploadedDocument> findByRequest_IdAndResultDocument(
             Long requestId,
-
             Boolean resultDocument
+    );
 
+    List<UploadedDocument> findByRequest_IdAndDocumentType(
+            Long requestId,
+            String documentType
+    );
+
+    List<UploadedDocument> findByRequest_IdAndDocumentTypeAndResultDocument(
+            Long requestId,
+            String documentType,
+            Boolean resultDocument
     );
 
     List<UploadedDocument> findByUploadedAtBefore(

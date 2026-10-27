@@ -394,11 +394,16 @@ function RequestDetails() {
                                                         📄
                                                     </span>
 
-                                                    <span className="document-name">
-                                                        {doc.documentName.length > 25
-                                                            ? doc.documentName.substring(0, 25) + "..."
-                                                            : doc.documentName}
-                                                    </span>
+                                                    <div className="document-text-group">
+                                                        <span className="document-name" title={doc.documentName}>
+                                                            {doc.documentName}
+                                                        </span>
+                                                        {doc.fileName && doc.fileName !== doc.documentName && (
+                                                            <span className="document-filename" title={doc.fileName}>
+                                                                {doc.fileName}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
 
                                                 <div className="document-actions">

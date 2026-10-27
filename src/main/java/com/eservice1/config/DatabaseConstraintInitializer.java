@@ -27,5 +27,17 @@ public class DatabaseConstraintInitializer implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("Database constraint uk_users_single_owner initialization skipped or failed: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS document_type VARCHAR(255)"
+            );
+            jdbcTemplate.execute(
+                    "UPDATE uploaded_documents SET document_type = document_name WHERE document_type IS NULL"
+            );
+            log.info("Database column uploaded_documents.document_type verified.");
+        } catch (Exception e) {
+            log.warn("Database migration for document_type skipped or failed: {}", e.getMessage());
+        }
     }
 }
