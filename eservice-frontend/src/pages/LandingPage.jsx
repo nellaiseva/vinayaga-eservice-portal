@@ -1324,7 +1324,7 @@ function LandingPage() {
                                             <div>
                                                 <strong>Address</strong>
                                                 <p>
-                                                    Address: 9, Medai Police Station Street / 22A, Vaikalpalam, Near VAO Office II, Palayamkottai, Tirunelveli, Tamil Nadu 627002
+                                                    Address: 22, Medai Police Station Street , Vaikalpalam, Near VAO Office II, Palayamkottai, Tirunelveli, Tamil Nadu 627002
                                                 </p>
                                             </div>
                                         </div>
